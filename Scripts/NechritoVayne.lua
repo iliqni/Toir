@@ -310,7 +310,7 @@ function NechritoVayne:OnAfterAttack(unit, target)
   if (IsJungleMonster(target.Addr) and GetOrbMode() == 4) then
 
       if(self.Q:IsReady() and self.menu_Qjungle) then
-        self:CastQ(target, true)
+        self:CastQ(target, false)
     end
 
     if (self.E:IsReady() and self.menu_Ejungle) then
