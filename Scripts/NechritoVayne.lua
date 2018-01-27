@@ -348,14 +348,12 @@ function NechritoVayne:OnAfterAttack(unit, target)
 
 if not (self.Q:IsReady()) then return end
 
-targ = GetAIHero(target)
-
 if (GetOrbMode() == 1 and self.menu_Qcombo) then -- Combo
-    self:CastQ(targ, self.menu_QtoEPos)
+    self:CastQ(target, self.menu_QtoEPos)
 end
 
 if (GetOrbMode() == 3 and self.menu_Qharass) then -- Harass
-  self:CastQ(targ, false)
+  self:CastQ(target, false)
 end
 
   if (GetOrbMode() == 4 or GetOrbMode() == 2)
@@ -411,7 +409,7 @@ function NechritoVayne:CastQ(target, force)
     end
   else
 
-    kitePos = self:GetKitePosition(target, 410)
+    kitePos = self:GetKitePosition(target, 520)
 
     if kitePos ~= nil then
       self.Q:Cast(kitePos)
@@ -419,19 +417,15 @@ function NechritoVayne:CastQ(target, force)
   end
 end
 
-function NechritoVayne:RotateAroundPoint(v1,v2, angle)
-    local cos, sin = math.cos(angle), math.sin(angle)
-    local x = ((v1.x - v2.x) * cos) - ((v2.z - v1.z) * sin) + v2.x
-    local z = ((v2.z - v1.z) * cos) + ((v1.x - v2.x) * sin) + v2.z
-    return Vector(x, v1.y, z or 0)
-end
-
 function NechritoVayne:GetWallPosition(target, range)
     range = range or 400
 
     for i= 0, 360, 45 do
-        local angle = i * math.pi/180
-        local pos = Vector(self:RotateAroundPoint(Vector(target.x + range, target.y, target.z), target, angle))
+        angle = i * math.pi/180
+        targetPosition = Vector(GetPos(target))
+        targetRotated = Vector(targetPosition.x + range, targetPosition.y, targetPosition.z)
+        pos = Vector(self:RotateAroundPoint(targetRotated, targetPosition, angle))
+
         if IsWall(pos.x, pos.y, pos.z) and GetDistance(Vector(myHero), pos) < range then
             return pos
         end
@@ -439,31 +433,29 @@ function NechritoVayne:GetWallPosition(target, range)
 end
 
 function NechritoVayne:GetKitePosition(target, range)
-  range = range or 410
 
-<<<<<<< HEAD
-  for i = 0, 360, 45 do
-=======
+  for i = 0, 360, 10 do
+    angle = i * (math.pi/180)
 
-  for i = 180, 360, 45 do
->>>>>>> 449ee65a95ebe301db08bb010a811ab0e3eef691
-    angle = i * math.pi / 180
-    pos = self:RotateAroundPoint(Vector(target.x + range, target.y, target.z + range), target, angle)
+    targetPosition = Vector(target)
+    rot = Vector(targetPosition.x + range, targetPosition.y, targetPosition.z)
 
-    if self:IsSafeTumble(pos, range) then return pos end
+
+    pos = self:RotateAroundPoint(Vector(myHero), rot, angle)
+
+    dist = GetDistance(targetPosition, pos)
+
+    if dist > range then return pos end
 
   end
   return nil
 end
 
-function NechritoVayne:IsSafeTumble (position, range)
-   for k, v in pairs(self:GetEnemies(1000)) do
-      vPos = Vector(GetPos(v))
-     if GetDistance(position, vPos) > range then
-        return true
-      end
-   end
-   return false
+function NechritoVayne:RotateAroundPoint(v1,v2, angle)
+    local cos, sin = math.cos(angle), math.sin(angle)
+    local x = ((v1.x - v2.x) * cos) - ((v2.z - v1.z) * sin) + v2.x
+    local z = ((v2.z - v1.z) * cos) + ((v1.x - v2.x) * sin) + v2.z
+    return Vector(x, v1.y, z or 0)
 end
 
 function NechritoVayne:GetHeroes()
