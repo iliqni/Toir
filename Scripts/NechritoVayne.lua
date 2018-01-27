@@ -188,7 +188,6 @@ end
   then
       self:FlashE()
   end
-
 end
 
 function NechritoVayne:OnProcessSpell(unit, spell)
@@ -302,7 +301,9 @@ end
 
 function NechritoVayne:OnUpdateBuff(source, unit, buff, stacks)
 
-  if string.lower(buff.Name) == "vaynetumblefade" and unit.IsMe then
+  if not unit.IsMe then return end
+
+  if string.lower(buff.Name) == "vaynetumblefade" then
     self.R.Invisible = true
     self.R.InvisTick = GetTickCount()
   end
@@ -310,7 +311,9 @@ end
 
 function NechritoVayne:OnRemoveBuff(unit, buff)
 
-  if string.lower(buff.Name) == "vaynetumblefade" and unit.IsMe then
+  if not unit.IsMe then return end
+
+  if string.lower(buff.Name) == "vaynetumblefade" then
     self.R.Invisible = false
   end
 end
@@ -338,6 +341,8 @@ function NechritoVayne:OnBeforeAttack(target)
 end
 
 function NechritoVayne:OnAfterAttack(unit, target)
+
+  if not unit.IsMe then return end
 
   if (IsJungleMonster(target.Addr) and GetOrbMode() == 4) then
 
@@ -445,7 +450,7 @@ function NechritoVayne:GetKitePosition(target, range)
   range = range or 410
 
 
-  for i = 0, 360, 45 do
+  for i = 180, 360, 45 do
     angle = i * math.pi / 180
     pos = self:RotateAroundPoint(Vector(target.x + range, target.y, target.z), target, angle)
     if (self:EnemyHeroesAroundPosition(pos, range) <= 0) then
