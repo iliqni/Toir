@@ -445,7 +445,7 @@ function NechritoVayne:GetKitePosition(target, range)
   range = range or 410
 
 
-  for i = 0, 360, 45 do
+  for i = 180, 360, 45 do
     angle = i * math.pi / 180
     pos = self:RotateAroundPoint(Vector(target.x + range, target.y, target.z), target, angle)
     if (self:EnemyHeroesAroundPosition(pos, range) <= 0) then
