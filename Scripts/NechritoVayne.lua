@@ -409,7 +409,7 @@ function NechritoVayne:CastQ(target, force)
     end
   else
 
-    kitePos = self:GetKitePosition(target, 520)
+    kitePos = self:GetKitePosition(target, 550)
 
     if kitePos ~= nil then
       self.Q:Cast(kitePos)
@@ -439,7 +439,6 @@ function NechritoVayne:GetKitePosition(target, range)
 
     targetPosition = Vector(target)
     rot = Vector(targetPosition.x + range, targetPosition.y, targetPosition.z)
-
 
     pos = self:RotateAroundPoint(Vector(myHero), rot, angle)
 
