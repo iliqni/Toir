@@ -54,8 +54,7 @@ self.listSpellInterrup =
 
   self:MenuValueDefault()
 
-   __PrintTextGame("<b><font color=\"#C70039\">Nechrito Vayne</font></b> <font color=\"#ffffff\">Loaded</font>")
-   __PrintTextGame("<b><font color=\"#C70039\">Nechrito Vayne</font></b> <font color=\"#ffffff\">Don't forget to: CTRL + NUMPAD 1</font>")
+   __PrintTextGame("<b><font color=\"#C70039\">Nechrito Vayne</font></b> <font color=\"#ffffff\">Loaded. Enjoy the mayhem</font>")
 end
 
 function NechritoVayne:MenuValueDefault()
@@ -70,7 +69,7 @@ function NechritoVayne:MenuValueDefault()
 
   self.menu_Wfocus = self:MenuBool("Focus Target With W Stacks", true)
 
-  self.menu_Eflash = self:MenuBool("Smart Flash Insec (Flash E)", true)
+  self.menu_Eflash = self:MenuKeyBinding("Smart Flash Insec", 84)
   self.menu_Einterrupt = self:MenuBool("Interrupt Spells", true)
   self.menu_Ecombo = self:MenuBool("Use E In Combo", true)
   self.menu_Eharass = self:MenuBool("Use E In Harass", false)
@@ -83,6 +82,9 @@ function NechritoVayne:MenuValueDefault()
   self.menu_DrawReady = self:MenuBool("Only Draw When Ready", true)
   self.menu_DrawE = self:MenuBool("Draw E Range", false)
   self.menu_DrawCondemn = self:MenuBool("Draw Condemn (Debug)", true)
+
+  self.menu_SkinEnable = self:MenuBool("Enalble Mod Skin", false)
+	self.menu_SkinIndex = self:MenuSliderInt("Skin", 11)
 
 end
 
@@ -105,7 +107,7 @@ if (Menu_Begin("W Settings")) then
 end
 
 if (Menu_Begin("E Settings")) then
-  self.menu_Eflash = Menu_Bool("Smart Flash Insec (Flash E)", self.menu_Eflash, self.menu)
+  self.menu_Eflash = Menu_KeyBinding("Smart Flash Insec (Press T AND Combo)", self.menu_Eflash, self.menu)
   self.menu_Einterrupt = Menu_Bool("Interrupt Spells", self.menu_Einterrupt, self.menu)
   self.menu_Ecombo = Menu_Bool("Use E In Combo", self.menu_Ecombo, self.menu)
   self.menu_Eharass = Menu_Bool("Use E In Harass", self.menu_Eharass, self.menu)
@@ -126,6 +128,9 @@ if (Menu_Begin("Drawings")) then
   self.menu_DrawCondemn = Menu_Bool("Draw Condemn (Debug)", self.menu_DrawCondemn, self.menu)
   Menu_End()
 end
+
+self.menu_SkinEnable = Menu_Bool("Enalble Mod Skin", self.menu_SkinEnable, self.menu)
+self.menu_SkinIndex = Menu_SliderInt("Set Skin", self.menu_SkinIndex, 0, 11, self.menu)
 
 end
 
@@ -152,6 +157,10 @@ SetLuaCombo(true)
 SetLuaHarass(true)
 SetLuaLaneClear(true)
 
+if self.menu_SkinEnable then
+  ModSkin(self.menu_SkinIndex)
+end
+
   if (self.R:IsReady()
   and GetOrbMode() == 1)
   then
@@ -172,7 +181,11 @@ SetLuaLaneClear(true)
     self:Condemn()
   end
 
-  if (self:GetFlashIndex() > -1 and self.menu_Eflash and self.E:IsReady()) then
+  if (self:GetFlashIndex() > -1
+  and GetKeyPress(self.menu_Eflash) > 0
+  and self.E:IsReady()
+  and CanCast(self:GetFlashIndex()))
+  then
       self:FlashE()
   end
 
@@ -197,24 +210,44 @@ function NechritoVayne:FlashE()
     unit = GetAIHero(v)
 
     if (IsValidTarget(unit, 600)) then
-      GetAllObjectAroundAnObject(unit.Addr, 500)
-      for k,v in pairs(pObject) do
 
-        if IsTurret(v) and IsAlly(v) and not IsDead(v) then
-          turretPos = Vector(GetPos(v))
-          targetPos = Vector(unit)
-          insecPos = Vector(targetPos + (targetPos - turretPos):Normalized() * 150)
+      targetPos = Vector(unit)
+      playerPos = Vector(myHero)
 
-          playerPos = Vector(myHero)
-          DrawCircleGame(insecPos.x, insecPos.y, insecPos.z,  50, Lua_ARGB(255, 0, 255, 0))
-          DrawCircleGame(playerPos.x, playerPos.y, playerPos.z,  425, Lua_ARGB(255, 255, 255, 0))
+      DrawCircleGame(playerPos.x, playerPos.y, playerPos.z,  425, Lua_ARGB(255, 255, 255, 0))
 
-          if (GetDistance(Vector(myHero), insecPos) > 425) then return end
+      wallPos = self:GetWallPosition(unit, 430)
 
-            CastSpellTarget(unit.Addr, _E)
-            DelayAction(function() CastSpellToPos(insecPos.x, insecPos.z, self:GetFlashIndex()) end, 0.15)
-          end
+      if (wallPos) then -- Insec to wall
+
+        insecPos = targetPos + (targetPos - wallPos):Normalized() * 200
+
+        DrawCircleGame(insecPos.x, insecPos.y, insecPos.z,  50, Lua_ARGB(255, 0, 255, 0))
+
+        if (GetDistance(insecPos, playerPos) <= 425) then
+          CastSpellTarget(unit.Addr, _E)
+          DelayAction(function() CastSpellToPos(insecPos.x, insecPos.z, self:GetFlashIndex()) end, 0.1)
         end
+
+      else -- Will try to insec enemy into turret
+
+        GetAllObjectAroundAnObject(unit.Addr, 500)
+        for k,v in pairs(pObject) do
+
+          if IsTurret(v) and IsAlly(v) and not IsDead(v) then
+            turretPos = Vector(GetPos(v))
+
+            insecPos = Vector(targetPos + (targetPos - turretPos):Normalized() * 150)
+
+            DrawCircleGame(insecPos.x, insecPos.y, insecPos.z,  50, Lua_ARGB(255, 0, 255, 0))
+
+            if (GetDistance(Vector(myHero), insecPos) > 425) then return end
+
+              CastSpellTarget(unit.Addr, _E)
+              DelayAction(function() CastSpellToPos(insecPos.x, insecPos.z, self:GetFlashIndex()) end, 0.1)
+            end
+          end
+      end
     end
   end
 end
@@ -300,7 +333,6 @@ function NechritoVayne:OnBeforeAttack(target)
    t = GetAIHero(v)
    if (target ~= t and GetBuffStack(t.Addr, "VayneSilveredDebuff") >= 2) then
       Orbwalker:ForceTarget(t)
-      --SetForcedTarget(obj)
    end
  end
 end
@@ -330,24 +362,29 @@ if (GetOrbMode() == 3 and self.menu_Qharass) then -- Harass
   self:CastQ(targ, false)
 end
 
-  if (GetOrbMode() == 4 or GetOrbMode() == 2
+  if (GetOrbMode() == 4 or GetOrbMode() == 2)
   and target ~= nil
-  and self.menu_Qlasthit)
---  and myHero.CalcDamage(target, myHero.TotalDmg) > target.HP)
+  and self.menu_Qlasthit
   then -- Laneclear
 
-    self:GetAAQTarget(unit)
+    self:GetAAQTarget()
   end
 end
 
-function NechritoVayne:GetAAQTarget(target)
+function NechritoVayne:GetAAQTarget()
 
+lastT = Orbwalker:GetOrbwalkingTarget()
   for i, minions in ipairs(MinionManager.Enemy) do
       if (minions) then
           minion = GetUnit(minions)
 
-          if minion.IsDead == false and minion.Addr ~= target.Addr and GetDistance(Vector(minion), Vector(myHero)) <= 800 then
-              if (myHero.CalcDamage(minion, myHero.TotalDmg) + self.Q:GetDamage(minion) > minion.HP)
+          if minion.IsDead == false
+          and GetDistance(Vector(minion), Vector(myHero)) <= 800
+          and lastT.Addr ~= minion.Addr
+          then
+
+              if (myHero.CalcDamage(minion.Addr, myHero.TotalDmg) + self.Q:GetDamage(minion) > minion.HP
+              and myHero.CalcDamage(minion.Addr, myHero.TotalDmg) < minion.HP)
               then
                   self:CastQ(minion, false)
               end
@@ -377,8 +414,11 @@ function NechritoVayne:CastQ(target, force)
        self.Q:Cast(newPos)
     end
   else
-  kitePos = self:GetKitePosition(target, 400)
-  self.Q:Cast(kitePos)
+  kitePos = self:GetKitePosition(target, 410)
+
+    if (kitePos) then
+    self.Q:Cast(kitePos)
+    end
   end
 end
 
@@ -392,7 +432,7 @@ end
 function NechritoVayne:GetWallPosition(target, range)
     range = range or 400
 
-    for i=0, 360, 20 do
+    for i= 0, 360, 20 do
         local angle = i * math.pi/180
         local pos = Vector(self:RotateAroundPoint(Vector(target.x + range, target.y, target.z + range), target, angle))
         if IsWall(pos.x, pos.y, pos.z) then
@@ -402,31 +442,31 @@ function NechritoVayne:GetWallPosition(target, range)
 end
 
 function NechritoVayne:GetKitePosition(target, range)
-  range = range or 400
+  range = range or 410
 
-  for i = 0, 360, 20 do
+
+  for i = 0, 360, 45 do
     angle = i * math.pi / 180
     pos = self:RotateAroundPoint(Vector(target.x + range, target.y, target.z), target, angle)
-
-    if (self:EnemyHeroesAroundPosition(pos, range) == 0) then
+    if (self:EnemyHeroesAroundPosition(pos, range) <= 0) then
       return pos
     end
   end
+  return nil
 end
 
 function NechritoVayne:EnemyHeroesAroundPosition (position, range)
   local n = 0
-  GetAllUnitAroundAnObject(myHero.Addr, 1000) -- Not optimised
+  GetAllUnitAroundAnObject(myHero.Addr, 1500) -- Not optimised
 
   for k, v in pairs(pUnit) do
       unit = GetAIHero(v)
-      if GetType(unit) == 0
-      and IsValidTarget(unit, 600)
-      and IsEnemy(unit) then
-        local objectPos = Vector(unit)
-          if (GetDistance(position, objectPos) <= range) then
-            n = n + 1
-          end
+      if IsEnemy(v)
+     and IsChampion(v)
+     and not unit.IsDead
+     and GetDistance(Vector(position), Vector(unit)) <= range
+     then
+        n = n + 1
       end
   end
   return n
