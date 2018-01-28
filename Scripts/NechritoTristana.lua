@@ -81,6 +81,8 @@ function NechritoTristana:MenuValueDefault()
     return result
   end
 
+  self.menu_whitelistComboOnly = self:MenuBool("Combo Only", true)
+
   self.menu_Rkill = self:MenuBool("OneShot (E + R)", true)
   self.menu_Rinterrupt = self:MenuBool("Interrupt Spells With R", true)
 
@@ -137,7 +139,9 @@ function NechritoTristana:OnDrawMenu()
     Menu_End()
   end
 
-  if Menu_Begin("Harass White List") then
+  if Menu_Begin("Whitelist") then
+    self.menu_whitelistComboOnly = Menu_Bool("Ignore During Combo", self.menu_whitelistComboOnly, self.menu)
+
      local WhiteListT = self.menu_EwhiteList()
 
       for i = 1, #HeroManager.Enemy do
@@ -217,7 +221,10 @@ function NechritoTristana:OnUpdate()
         or (GetOrbMode() == 3 and self.menu_Eharass)
         then
 
-          if IsValidTarget(v, GetTrueAttackRange()) and self:Whitelist(v) then
+          if IsValidTarget(v, GetTrueAttackRange()) then
+
+              if self:Whitelist(v) and self.menu_whitelistComboOnly and GetOrbMode() ~= 1 then return end
+
               CastSpellTarget(v.Addr, _E)
           end
         end
