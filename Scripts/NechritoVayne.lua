@@ -64,6 +64,7 @@ function NechritoVayne:MenuValueDefault()
 
   self.menu = "Nechrito Vayne"
 
+  self.menu_qPos = self:MenuComboBox("Position ", 0)
   self.menu_QtoEPos = self:MenuBool("Q To E Position If Possible", true)
   self.menu_Qcombo = self:MenuBool("Use Q In Combo", true)
   self.menu_Qharass = self:MenuBool("Use Q In Harass", true)
@@ -85,6 +86,7 @@ function NechritoVayne:MenuValueDefault()
   self.menu_DrawReady = self:MenuBool("Only Draw When Ready", true)
   self.menu_DrawE = self:MenuBool("Draw E Range", false)
   self.menu_DrawCondemn = self:MenuBool("Draw Condemn (Debug)", true)
+  self.menu_DrawQPos = self:MenuBool("Draw Q Position (Debug)", false)
 
   self.menu_SkinEnable = self:MenuBool("Enalble Mod Skin", false)
 	self.menu_SkinIndex = self:MenuSliderInt("Skin", 11)
@@ -96,6 +98,7 @@ function NechritoVayne:OnDrawMenu()
 if not Menu_Begin(self.menu) then return end
 
 if (Menu_Begin("Q Settings")) then
+  self.menu_qPos = Menu_ComboBox("Position ", self.menu_qPos, "Automatic\0Mouse\0\0", self.menu)
   self.menu_QtoEPos = Menu_Bool("Q To E Position If Possible", self.menu_QtoEPos, self.menu)
   self.menu_Qcombo = Menu_Bool("Use Q In Combo", self.menu_Qcombo, self.menu)
   self.menu_Qharass = Menu_Bool("Use Q In Harass", self.menu_Qharass, self.menu)
@@ -129,6 +132,7 @@ if (Menu_Begin("Drawings")) then
   self.menu_DrawReady = Menu_Bool("Only Draw When Ready", self.menu_DrawReady, self.menu)
   self.menu_DrawE = Menu_Bool("Draw E Range", self.menu_DrawE, self.menu)
   self.menu_DrawCondemn = Menu_Bool("Draw Condemn (Debug)", self.menu_DrawCondemn, self.menu)
+  self.menu_DrawQPos = Menu_Bool("Draw Q Position (Debug)", self.menu_DrawQPos, self.menu)
   Menu_End()
 end
 
@@ -143,6 +147,10 @@ function NechritoVayne:OnDraw()
       if (self.menu_DrawReady and not self.E:IsReady()) then return end
       pos = Vector(myHero)
       DrawCircleGame(pos.x, pos.y, pos.z, self.E.Range, Lua_ARGB(255, 0, 204, 255))
+  end
+
+  if (self.Q.tumblePosition ~= nil and self.menu_DrawQPos) then
+    DrawCircleGame(self.Q.tumblePosition.x, self.Q.tumblePosition.y, self.Q.tumblePosition.z, 60, Lua_ARGB(255, 0, 204, 255))
   end
 end
 
@@ -389,6 +397,15 @@ lastT = Orbwalker:GetOrbwalkingTarget()
 end
 
 function NechritoVayne:CastQ(target, force)
+
+  if self.menu_qPos == 1 then
+    playerPos = Vector(myHero)
+    mousePos =Vector(GetMousePosX(), GetMousePosY(), GetMousePosZ())
+    final = playerPos:Extended(mousePos, 500)
+    self.Q.tumblePosition = final
+    self.Q:Cast(final)
+    return
+  end
 
   wallPos = self:GetWallPosition(target, 140)
 
