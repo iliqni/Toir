@@ -12,9 +12,12 @@ end
 
 function NechritoVayne:__init()
 
+  myHero = GetMyHero()
+
 self.Q = Spell({Slot = 0,
                 SpellType = Enum.SpellType.SkillShot,
-                Range = 300,})
+                Range = 300,
+                tumblePosition = nil})
 
 self.W = Spell({Slot = 1,
                 SpellType = Enum.SpellType.Active})
@@ -42,7 +45,7 @@ self.listSpellInterrup =
 ["XerathLocusPulse"] = true,
 }
 
-  AddEvent(Enum.Event.OnUpdate, function(...) self:OnUpdate(...) end)
+  AddEvent(Enum.Event.OnTick, function(...) self:OnTick(...) end)
   AddEvent(Enum.Event.OnUpdateBuff, function(...) self:OnUpdateBuff(...) end)
   AddEvent(Enum.Event.OnRemoveBuff, function(...) self:OnRemoveBuff(...) end)
   AddEvent(Enum.Event.OnDraw, function(...) self:OnDraw(...) end)
@@ -141,11 +144,13 @@ function NechritoVayne:OnDraw()
       pos = Vector(myHero)
       DrawCircleGame(pos.x, pos.y, pos.z, self.E.Range, Lua_ARGB(255, 0, 204, 255))
   end
+
+  if (self.Q.tumblePosition ~= nil) then
+    DrawCircleGame(self.Q.tumblePosition.x, self.Q.tumblePosition.y, self.Q.tumblePosition.z, 60, Lua_ARGB(255, 0, 204, 255))
+  end
 end
 
-function NechritoVayne:OnUpdate()
-
-myHero = GetMyHero()
+function NechritoVayne:OnTick()
 
 if (IsDead(myHero.Addr)
 or myHero.IsRecall
@@ -409,7 +414,7 @@ function NechritoVayne:CastQ(target, force)
     end
   else
 
-    kitePos = self:GetKitePosition(target, 550)
+    kitePos = self:GetKitePosition(target, 410)
 
     if kitePos ~= nil then
       self.Q:Cast(kitePos)
@@ -434,26 +439,32 @@ end
 
 function NechritoVayne:GetKitePosition(target, range)
 
-  for i = 0, 360, 10 do
+  for i = 0, 360, 20 do
     angle = i * (math.pi/180)
 
     targetPosition = Vector(target)
     rot = Vector(targetPosition.x + range, targetPosition.y, targetPosition.z)
 
     pos = self:RotateAroundPoint(Vector(myHero), rot, angle)
+    pos = Vector(myHero) + (Vector(myHero) - pos):Normalized() * self.Q.Range
 
     dist = GetDistance(targetPosition, pos)
 
-    if dist > range then return pos end
+    if dist < range
+    or dist > GetTrueAttackRange() then --__PrintTextGame("NOT VALID")
 
+    else
+    --  __PrintTextGame(dist)
+     self.Q.tumblePosition = pos
+     return pos end
   end
   return nil
 end
 
 function NechritoVayne:RotateAroundPoint(v1,v2, angle)
-    local cos, sin = math.cos(angle), math.sin(angle)
-    local x = ((v1.x - v2.x) * cos) - ((v2.z - v1.z) * sin) + v2.x
-    local z = ((v2.z - v1.z) * cos) + ((v1.x - v2.x) * sin) + v2.z
+     cos, sin = math.cos(angle), math.sin(angle)
+     x = ((v1.x - v2.x) * cos) - ((v2.z - v1.z) * sin) + v2.x
+     z = ((v2.z - v1.z) * cos) + ((v1.x - v2.x) * sin) + v2.z
     return Vector(x, v1.y, z or 0)
 end
 
