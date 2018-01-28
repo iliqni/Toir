@@ -144,10 +144,6 @@ function NechritoVayne:OnDraw()
       pos = Vector(myHero)
       DrawCircleGame(pos.x, pos.y, pos.z, self.E.Range, Lua_ARGB(255, 0, 204, 255))
   end
-
-  if (self.Q.tumblePosition ~= nil) then
-    DrawCircleGame(self.Q.tumblePosition.x, self.Q.tumblePosition.y, self.Q.tumblePosition.z, 60, Lua_ARGB(255, 0, 204, 255))
-  end
 end
 
 function NechritoVayne:OnTick()
