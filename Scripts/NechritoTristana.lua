@@ -2,17 +2,7 @@ IncludeFile("Lib\\SDK.lua")
 
 class "NechritoTristana"
 
-function OnLoad()
-
-  if GetChampName(GetMyChamp()) ~= "Tristana"
-  then return end
-
-NechritoTristana:__init()
-end
-
 function NechritoTristana:__init()
-
-  myHero = GetMyHero()
 
 self.Q = Spell({Slot = 0,
                 SpellType = Enum.SpellType.Active})
@@ -53,9 +43,8 @@ AddEvent(Enum.Event.OnUpdate, function(...) self:OnUpdate(...) end)
 AddEvent(Enum.Event.OnDraw, function(...) self:OnDraw(...) end)
 AddEvent(Enum.Event.OnAfterAttack, function(...) self:OnAfterAttack(...) end)
 AddEvent(Enum.Event.OnBeforeAttack, function(...) self:OnBeforeAttack(...) end)
---AddEvent(Enum.Event.OnProcessSpell, function(...) self:OnProcessSpell(...) end)
+AddEvent(Enum.Event.OnProcessSpell, function(...) self:OnProcessSpell(...) end)
 AddEvent(Enum.Event.OnDrawMenu, function(...) self:OnDrawMenu(...) end)
---Orbwalker:RegisterPreAttackCallback(function(...)  self:OnPreAttack(...) end)
 
 self:MenuValueDefault()
 
@@ -78,6 +67,20 @@ function NechritoTristana:MenuValueDefault()
   self.menu_Elaneclear = self:MenuBool("Use E In LaneClear", true)
   self.menu_Ejungle = self:MenuBool("Use E In Jungle", true)
 
+  self.menu_EwhiteList = function()
+        local result = {}
+
+        for i = 1, #HeroManager.Enemy do
+          local enemy = GetAIHero(HeroManager.Enemy[i])
+          result[#result + 1] =
+          {
+            CharName = enemy.CharName,
+            Menu = self:MenuBool("Harass: " .. enemy.CharName, true)
+          }
+    end
+    return result
+  end
+
   self.menu_Rkill = self:MenuBool("OneShot (E + R)", true)
   self.menu_Rinterrupt = self:MenuBool("Interrupt Spells With R", true)
 
@@ -86,6 +89,25 @@ function NechritoTristana:MenuValueDefault()
 
   self.menu_SkinEnable = self:MenuBool("Enalble Mod Skin", false)
 	self.menu_SkinIndex = self:MenuSliderInt("Skin", 11)
+
+end
+
+function NechritoTristana:Whitelist(unit)
+
+  local WhiteListT = self.menu_EwhiteList()
+
+        for j = 1, #WhiteListT do
+          local index = 0
+
+        if WhiteListT[j].CharName == unit.CharName then
+            index = j
+          end
+
+      if index ~= 0 then
+        return WhiteListT[index].Menu
+      end
+    end
+  return false
 
 end
 
@@ -115,6 +137,26 @@ function NechritoTristana:OnDrawMenu()
     Menu_End()
   end
 
+  if Menu_Begin("Harass White List") then
+     local WhiteListT = self.menu_EwhiteList()
+
+      for i = 1, #HeroManager.Enemy do
+        local enemy = HeroManager.Enemy[i]
+
+          for j = 1, #WhiteListT do
+            local index = 0
+              if WhiteListT[j].CharName == GetChampName(enemy) then
+                  index = j
+                end
+
+               if index ~= 0 then
+                 WhiteListT[index].Menu = Menu_Bool("Harass: " .. GetChampName(enemy), WhiteListT[index].Menu, self.menu)
+               end
+            end
+         end
+        Menu_End()
+      end
+
   if (Menu_Begin("Drawings")) then
     self.menu_DrawReady = Menu_Bool("Only Draw When Ready", self.menu_DrawReady, self.menu)
     self.menu_DrawW = Menu_Bool("Draw W Range", self.menu_DrawW, self.menu)
@@ -122,7 +164,7 @@ function NechritoTristana:OnDrawMenu()
   end
 
   self.menu_SkinEnable = Menu_Bool("Enalble Mod Skin", self.menu_SkinEnable, self.menu)
-  self.menu_SkinIndex = Menu_SliderInt("Set Skin", self.menu_SkinIndex, 0, 17, self.menu)
+  self.menu_SkinIndex = Menu_SliderInt("Set Skin", self.menu_SkinIndex, 0, 25, self.menu)
 
 end
 
@@ -151,12 +193,14 @@ function NechritoTristana:OnUpdate()
       ModSkin(self.menu_SkinIndex)
     end
 
-    for k,v in pairs(self:GetEnemies(1000)) do
+    for k,v in pairs(self:GetEnemies(GetTrueAttackRange())) do
 
-      if (GetOrbMode() == 1 and self.menu_Rkill) then
-        if( self.R:GetDamage(v) + self:GetEDmg(v) > v.HP
+      if GetOrbMode() == 1 and self.menu_Rkill then
+
+        if  Orbwalker:CanAttack()
+        and self.R:GetDamage(v) + self:GetEDmg(v) > v.HP
         and self.E:GetDamage(v) < v.HP
-        and self.R:CanCast(v)) then
+        and self.R:CanCast(v) then
           CastSpellTarget(v.Addr, _R)
           end
         end
@@ -173,7 +217,7 @@ function NechritoTristana:OnUpdate()
         or (GetOrbMode() == 3 and self.menu_Eharass)
         then
 
-          if IsValidTarget(v, GetTrueAttackRange()) then
+          if IsValidTarget(v, GetTrueAttackRange()) and self:Whitelist(v) then
               CastSpellTarget(v.Addr, _E)
           end
         end
@@ -184,13 +228,28 @@ function NechritoTristana:OnAfterAttack(unit, target)
 
   if not unit.IsMe then return end
 
-    if (GetOrbMode() == 4 and self.menu_Elaneclear and self.E:CanCast(target)) then
+if (IsJungleMonster(target.Addr) and GetOrbMode() == 4) then
 
-    		if IsTurret(target)
-        and not IsDead(target)
-        and IsEnemy(target)
-        and GetPercentHP(target) >= 20 then
-    			 CastSpellTarget(target.Addr, _E)
+    if self.menu_Ejungle  then
+      CastSpellTarget(target.Addr, _E)
+    end
+
+    if self.menu_Qjungle then
+      self.Q:Cast(target)
+    end
+end
+
+    if (GetOrbMode() == 4) then
+
+    		if IsTurret(target.Addr)
+         then
+           if self.menu_Elaneclear then
+    			     CastSpellTarget(target.Addr, _E)
+          end
+
+          if self.menu_Qlaneclear then
+            self.Q:Cast(target)
+          end
         end
 
         for i, minions in ipairs(MinionManager.Enemy) do
@@ -209,7 +268,7 @@ end
 
 function NechritoTristana:OnBeforeAttack(target)
 
-  if GetOrbMode() == 1 or GetOrbMode() == 3 then
+  if GetOrbMode() == 3 then
     for k,v in pairs(self:GetEnemies(GetTrueAttackRange())) do
 
       if v.HasBuff("tristanaecharge") then
@@ -231,6 +290,19 @@ function NechritoTristana:OnBeforeAttack(target)
       end
     end
   end
+end
+
+function NechritoTristana:OnProcessSpell(unit, spell)
+  if   unit
+   and unit.IsEnemy
+   and self.menu_Einterrupt
+   and self.listSpellInterrup[spell.Name]
+   and self.OnInterruptableSpell
+   and IsValidTarget(unit, self.R.Range)
+   then
+     __PrintTextGame("Tristana INTERRUPTING WITH E")
+			self.R:Cast(unit)
+	end
 end
 
 function NechritoTristana:GetEDmg(target) -- Got this from CTTBOT
@@ -282,4 +354,10 @@ end
 
 function NechritoTristana:MenuKeyBinding(stringKey, valueDefault)
 	return ReadIniInteger(self.menu, stringKey, valueDefault)
+end
+
+if _G["Nechrito" .. myHero.CharName] then
+        DelayAction(function()
+                _G["Nechrito" .. myHero.CharName]()
+        end, 0.5)
 end

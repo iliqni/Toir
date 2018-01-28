@@ -201,7 +201,7 @@ function NechritoVayne:OnProcessSpell(unit, spell)
    and self.menu_Einterrupt
    and self.listSpellInterrup[spell.Name]
    and self.OnInterruptableSpell
-   and IsValidTarget(unit, self.E.range)
+   and IsValidTarget(unit, self.E.Range)
    then
      __PrintTextGame("VAYNE INTERRUPTING WITH E")
 			self.E:Cast(unit)
@@ -414,7 +414,7 @@ function NechritoVayne:CastQ(target, force)
     end
   else
 
-    kitePos = self:GetKitePosition(target, 410)
+    kitePos = self:GetKitePosition(target, 390)
 
     if kitePos ~= nil then
       self.Q:Cast(kitePos)
