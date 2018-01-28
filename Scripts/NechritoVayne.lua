@@ -451,7 +451,7 @@ function NechritoVayne:GetKitePosition(target, range)
     dist = GetDistance(targetPosition, pos)
 
     if dist < range
-    or dist > GetTrueAttackRange() then --__PrintTextGame("NOT VALID")
+    or dist > GetTrueAttackRange() + 150 then --__PrintTextGame("NOT VALID")
 
     else
     --  __PrintTextGame(dist)
