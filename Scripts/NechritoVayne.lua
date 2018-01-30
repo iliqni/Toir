@@ -1,3 +1,4 @@
+--IncludeFile("Lib\\AntiGapcloser.lua")
 IncludeFile("Lib\\SDK.lua")
 
 class "NechritoVayne"
@@ -12,7 +13,7 @@ end
 
 function NechritoVayne:__init()
 
-  myHero = GetMyHero()
+
 
 self.Q = Spell({Slot = 0,
                 SpellType = Enum.SpellType.SkillShot,
@@ -56,6 +57,7 @@ self.listSpellInterrup =
   Orbwalker:RegisterPreAttackCallback(function(...)  self:OnPreAttack(...) end)
 
   self:MenuValueDefault()
+  --AntiGap = AntiGapCloser()
 
    __PrintTextGame("<b><font color=\"#C70039\">Nechrito Vayne</font></b> <font color=\"#ffffff\">Loaded. Enjoy the mayhem</font>")
 end
@@ -66,18 +68,20 @@ function NechritoVayne:MenuValueDefault()
 
   self.menu_qPos = self:MenuComboBox("Position ", 0)
   self.menu_QtoEPos = self:MenuBool("Q To E Position If Possible", true)
-  self.menu_Qcombo = self:MenuBool("Use Q In Combo", true)
-  self.menu_Qharass = self:MenuBool("Use Q In Harass", true)
-  self.menu_Qlasthit = self:MenuBool("Use Q To Lasthit", true)
-  self.menu_Qjungle = self:MenuBool("Use Q In Jungle", true)
+  --self.menu_Qantigapclose = self:MenuBool("AntiGapCloser", true)
+  self.menu_Qcombo = self:MenuBool("Combo", true)
+  self.menu_Qharass = self:MenuBool("Harass", true)
+  self.menu_Qlasthit = self:MenuBool("Lasthit", true)
+  self.menu_Qjungle = self:MenuBool("Jungle", true)
 
   self.menu_Wfocus = self:MenuBool("Focus Target With W Stacks", true)
 
   self.menu_Eflash = self:MenuKeyBinding("Smart Flash Insec", 84)
   self.menu_Einterrupt = self:MenuBool("Interrupt Spells", true)
-  self.menu_Ecombo = self:MenuBool("Use E In Combo", true)
-  self.menu_Eharass = self:MenuBool("Use E In Harass", false)
-  self.menu_Ejungle = self:MenuBool("Use E In Jungle", false)
+  --self.menu_Eantigapclose = self:MenuBool("AntiGapCloser", true)
+  self.menu_Ecombo = self:MenuBool("Combo", true)
+  self.menu_Eharass = self:MenuBool("Harass", false)
+  self.menu_Ejungle = self:MenuBool("Jungle", false)
 
   self.menu_Rcount = self:MenuSliderInt("Use R If >= X Enemies Nearby", 3)
   self.menu_Rkillable = self:MenuSliderInt("Only R When Killable By X Autoattacks", 5)
@@ -100,10 +104,11 @@ if not Menu_Begin(self.menu) then return end
 if (Menu_Begin("Q Settings")) then
   self.menu_qPos = Menu_ComboBox("Position ", self.menu_qPos, "Automatic\0Mouse\0\0", self.menu)
   self.menu_QtoEPos = Menu_Bool("Q To E Position If Possible", self.menu_QtoEPos, self.menu)
-  self.menu_Qcombo = Menu_Bool("Use Q In Combo", self.menu_Qcombo, self.menu)
-  self.menu_Qharass = Menu_Bool("Use Q In Harass", self.menu_Qharass, self.menu)
-  self.menu_Qlasthit = Menu_Bool("Use Q To Lasthit", self.menu_Qlasthit, self.menu)
-  self.menu_Qjungle = Menu_Bool("Use Q In Jungle", self.menu_Qjungle, self.menu)
+  --self.menu_Qantigapclose = Menu_Bool("AntiGapCloser", self.menu_Qantigapclose, self.menu)
+  self.menu_Qcombo = Menu_Bool("Combo", self.menu_Qcombo, self.menu)
+  self.menu_Qharass = Menu_Bool("Harass", self.menu_Qharass, self.menu)
+  self.menu_Qlasthit = Menu_Bool("Lasthit", self.menu_Qlasthit, self.menu)
+  self.menu_Qjungle = Menu_Bool("Jungle", self.menu_Qjungle, self.menu)
   Menu_End()
 end
 
@@ -115,9 +120,10 @@ end
 if (Menu_Begin("E Settings")) then
   self.menu_Eflash = Menu_KeyBinding("Smart Flash Insec (Press T AND Combo)", self.menu_Eflash, self.menu)
   self.menu_Einterrupt = Menu_Bool("Interrupt Spells", self.menu_Einterrupt, self.menu)
-  self.menu_Ecombo = Menu_Bool("Use E In Combo", self.menu_Ecombo, self.menu)
-  self.menu_Eharass = Menu_Bool("Use E In Harass", self.menu_Eharass, self.menu)
-  self.menu_Ejungle = Menu_Bool("Use E In Jungle (ALL MOBS, TEMPORARY)", self.menu_Ejungle, self.menu)
+  --self.menu_Eantigapclose = Menu_Bool("AntiGapCloser", self.menu_Eantigapclose, self.menu)
+  self.menu_Ecombo = Menu_Bool("Combo", self.menu_Ecombo, self.menu)
+  self.menu_Eharass = Menu_Bool("Harass", self.menu_Eharass, self.menu)
+  self.menu_Ejungle = Menu_Bool("Jungle (ALL MOBS, TEMPORARY)", self.menu_Ejungle, self.menu)
   Menu_End()
 end
 
@@ -182,6 +188,21 @@ end
     end
   end
 
+--[[
+  target, enpos = AntiGap:AntiGapInfo()
+  if target and endPos then
+
+    if self.E:IsReady() and self.menu_Eantigapclose then
+              CastSpellTarget(target.Addr, _E)
+      return
+     end
+
+    if self.Q:IsReady() and self.menu_Qantigapclose then
+      pos = endPos + (endPos - Vector(myHero)):Normalized() * self.Q.Range
+      self.Q:Cast(pos)
+    end
+  end
+]]
   if (self.E:IsReady()
   and GetOrbMode() == 1 and self.menu_Ecombo)
   or (GetOrbMode() == 3 and self.menu_Eharass)
@@ -406,11 +427,11 @@ function NechritoVayne:CastQ(target, force)
     self.Q:Cast(final)
     return
   end
-
   wallPos = self:GetWallPosition(target, 140)
 
   if (wallPos) then
       self.Q:Cast(wallPos)
+      return
   end
 
   qToEPos = self:GetWallPosition(target, 200)
@@ -424,15 +445,20 @@ function NechritoVayne:CastQ(target, force)
 
   if (GetDistance(Vector(myHero), newPos) < self.Q.Range) then
        self.Q:Cast(newPos)
+       return
     end
-  else
+  end
 
-    kitePos = self:GetKitePosition(target, 390)
+    if GetDistance(Vector(myHero), Vector(target)) > GetTrueAttackRange() + 100 then
+      self.Q:Cast(Vector(target))
+      return
+    end
+
+    kitePos = self:GetKitePosition(target, 410)
 
     if kitePos ~= nil then
       self.Q:Cast(kitePos)
     end
-  end
 end
 
 function NechritoVayne:GetWallPosition(target, range)
@@ -452,27 +478,25 @@ end
 
 function NechritoVayne:GetKitePosition(target, range)
 
-  for i = 0, 360, 20 do
-    angle = i * (math.pi/180)
+    for i = 0, 360, 20 do
+      angle = i * (math.pi/180)
 
-    targetPosition = Vector(target)
-    rot = Vector(targetPosition.x + range, targetPosition.y, targetPosition.z)
+      targetPosition = Vector(target)
+      rot = Vector(targetPosition.x + range, targetPosition.y, targetPosition.z)
 
-    pos = self:RotateAroundPoint(Vector(myHero), rot, angle)
-    pos = Vector(myHero) + (Vector(myHero) - pos):Normalized() * self.Q.Range
+      pos = self:RotateAroundPoint(Vector(myHero), rot, angle)
+      pos = Vector(myHero) + (Vector(myHero) - pos):Normalized() * self.Q.Range
 
-    dist = GetDistance(targetPosition, pos)
+      dist = GetDistance(targetPosition, pos)
 
-    if dist < range
-    or dist > GetTrueAttackRange() + 65 then --__PrintTextGame("NOT VALID")
+      if dist < range then --__PrintTextGame("NOT VALID")
 
-    else
-    --  __PrintTextGame(dist)
-     self.Q.tumblePosition = pos
-     return pos end
+      --  __PrintTextGame(dist)
+       self.Q.tumblePosition = pos
+       return pos end
+    end
+    return nil
   end
-  return nil
-end
 
 function NechritoVayne:RotateAroundPoint(v1,v2, angle)
      cos, sin = math.cos(angle), math.sin(angle)

@@ -4,6 +4,9 @@ class "NechritoTristana"
 
 function NechritoTristana:__init()
 
+  if GetChampName(GetMyChamp()) ~= "Tristana"
+  then return end
+
 self.Q = Spell({Slot = 0,
                 SpellType = Enum.SpellType.Active})
 
@@ -201,8 +204,7 @@ function NechritoTristana:OnUpdate()
 
       if GetOrbMode() == 1 and self.menu_Rkill then
 
-        if  Orbwalker:CanAttack()
-        and self.R:GetDamage(v) + self:GetEDmg(v) > v.HP
+        if  self.R:GetDamage(v) + self:GetEDmg(v) > v.HP
         and self.E:GetDamage(v) < v.HP
         and self.R:CanCast(v) then
           CastSpellTarget(v.Addr, _R)
