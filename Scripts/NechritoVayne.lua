@@ -19,7 +19,8 @@ function NechritoVayne:__init()
 self.Q = Spell({Slot = 0,
                 SpellType = Enum.SpellType.SkillShot,
                 Range = 300,
-                tumblePosition = nil})
+                tumblePositions = {},
+                })
 
 self.W = Spell({Slot = 1,
                 SpellType = Enum.SpellType.Active})
@@ -68,6 +69,7 @@ function NechritoVayne:MenuValueDefault()
 
   self.menu_qPos = self:MenuComboBox("Position ", 0)
   self.menu_QtoEPos = self:MenuBool("Q To E Position If Possible", true)
+  self.menu_qDistance = self:MenuSliderInt("Dash Distance From Target", 370)
   --self.menu_Qantigapclose = self:MenuBool("AntiGapCloser", true)
   self.menu_Qcombo = self:MenuBool("Combo", true)
   self.menu_Qharass = self:MenuBool("Harass", true)
@@ -89,7 +91,6 @@ function NechritoVayne:MenuValueDefault()
 
   self.menu_DrawReady = self:MenuBool("Only Draw When Ready", true)
   self.menu_DrawE = self:MenuBool("Draw E Range", false)
-  self.menu_DrawCondemn = self:MenuBool("Draw Condemn (Debug)", true)
   self.menu_DrawQPos = self:MenuBool("Draw Q Position (Debug)", false)
 
   self.menu_SkinEnable = self:MenuBool("Enalble Mod Skin", false)
@@ -104,6 +105,7 @@ if not Menu_Begin(self.menu) then return end
 if (Menu_Begin("Q Settings")) then
   self.menu_qPos = Menu_ComboBox("Position ", self.menu_qPos, "Automatic\0Mouse\0\0", self.menu)
   self.menu_QtoEPos = Menu_Bool("Q To E Position If Possible", self.menu_QtoEPos, self.menu)
+  self.menu_qDistance = Menu_SliderInt("Dash Distance From Target", self.menu_qDistance, 0, 550)
   --self.menu_Qantigapclose = Menu_Bool("AntiGapCloser", self.menu_Qantigapclose, self.menu)
   self.menu_Qcombo = Menu_Bool("Combo", self.menu_Qcombo, self.menu)
   self.menu_Qharass = Menu_Bool("Harass", self.menu_Qharass, self.menu)
@@ -137,7 +139,6 @@ end
 if (Menu_Begin("Drawings")) then
   self.menu_DrawReady = Menu_Bool("Only Draw When Ready", self.menu_DrawReady, self.menu)
   self.menu_DrawE = Menu_Bool("Draw E Range", self.menu_DrawE, self.menu)
-  self.menu_DrawCondemn = Menu_Bool("Draw Condemn (Debug)", self.menu_DrawCondemn, self.menu)
   self.menu_DrawQPos = Menu_Bool("Draw Q Position (Debug)", self.menu_DrawQPos, self.menu)
   Menu_End()
 end
@@ -156,8 +157,10 @@ function NechritoVayne:OnDraw()
       DrawCircleGame(pos.x, pos.y, pos.z, self.E.Range, Lua_ARGB(255, 0, 204, 255))
   end
 
-  if self.Q.tumblePosition ~= nil and self.menu_DrawQPos and GetDistance(self.Q.tumblePosition) < 600 then
-    DrawCircleGame(self.Q.tumblePosition.x, self.Q.tumblePosition.y, self.Q.tumblePosition.z, 60, Lua_ARGB(255, 0, 204, 255))
+  if self.menu_DrawQPos and self.Q.tumblePositions ~= nil then
+    for k, v in pairs(self.Q.tumblePositions) do
+      DrawCircleGame(v.x, v.y, v.z, 60, Lua_ARGB(255, 0, 204, 255))
+    end
   end
 end
 
@@ -312,18 +315,7 @@ function NechritoVayne:Condemn()
         end
 
         if IsWall(final.x, final.y, final.z) and IsWall(finalT.x, finalT.y, finalT.z) and IsValidTarget(v, self.E.Range) then
-
           CastSpellTarget(v.Addr, _E)
-
-          if (self.menu_DrawCondemn) then
-            DrawCircleGame(finalT.x, finalT.y, finalT.z, 100, Lua_ARGB(255, 0, 255, 0))
-            DrawCircleGame(final.x, final.y, final.z,    80, Lua_ARGB(255, 0, 255, 0))
-          end
-
-
-        elseif (self.menu_DrawCondemn) then
-          DrawCircleGame(finalT.x, finalT.y, finalT.z, i / 10, Lua_ARGB(255, 255, 0, 0))
-          DrawCircleGame(final.x, final.y, final.z,    i / 10, Lua_ARGB(255, 255, 0, 0))
         end
       end
     end
@@ -423,6 +415,7 @@ end
 function NechritoVayne:CastQ(target, force)
 
   castPos = nil
+  self.Q.tumblePosition = {}
 
   wallPos = self:GetWallPosition(target, 140)
   qToEPos = self:GetWallPosition(target, 200)
@@ -454,7 +447,7 @@ function NechritoVayne:CastQ(target, force)
       castPos = kitePos
     end
 
-    self.Q.tumblePosition = castPos
+    if castPos == nil then return end
     self.Q:Cast(castPos)
 end
 
@@ -474,31 +467,32 @@ function NechritoVayne:GetWallPosition(target, range)
 end
 
 function NechritoVayne:GetKitePosition(target)
-    for i = 0, 360, 45 do
-      angle = i * (math.pi/180)
+  self.Q.tumblePositions = {}
 
-      targetPosition = Vector(target)
-      rot = Vector(targetPosition.x + self.Q.Range, targetPosition.y, targetPosition.z)
+  for i = 0, 360, 45 do
+    angle = i * (math.pi/180)
 
-      pos = self:RotateAroundPoint(Vector(myHero), rot, angle)
-      pos = Vector(myHero) + (Vector(myHero) - pos):Normalized() * self.Q.Range
+    myPos = Vector(myHero)
+    tPos = myPos + (myPos - Vector(target)):Normalized() * self.menu_qDistance
 
-      if (IsChampion(target.Addr)) then
-        for k,v in pairs(self:GetEnemies(800)) do
+    rot = self:RotateAroundPoint(Vector(myHero), tPos, angle)
+    pos = myPos + (myPos - rot):Normalized() * self.Q.Range
 
-          dist = GetDistance(v, pos) / 2
-          if (dist < GetTrueAttackRange() - 250) then
-             self.Q.tumblePosition = pos
-             return pos end
-           end
+     table.insert(self.Q.tumblePositions, pos)
 
-         else
-           dist = GetDistance(Vector(target), pos) / 2
-           if (dist < GetTrueAttackRange() - 250) then
-              self.Q.tumblePosition = pos
-              return pos end
+    if (IsChampion(target.Addr)) then
+      for k,v in pairs(self:GetEnemies(900)) do
+
+        dist = GetDistance(v, pos) / 2
+        __PrintTextGame("Distance: " .. dist)
+        __PrintTextGame("My Range: " .. GetTrueAttackRange())
+        if (dist < 380 and dist > 200) then
+           return pos end
          end
-       end
+
+       else return pos end
+       __PrintTextGame("Index = " .. i)
+  end
     return nil
   end
 
