@@ -85,7 +85,7 @@ function NechritoDraven:MenuValueDefault()
   self.menu_Qdistance = self:MenuSliderInt("Catch Range (From Cursor)", 600)
   self.menu_Qcombo = self:MenuBool("Combo", true)
   self.menu_Qharass = self:MenuBool("Harass", true)
-  self.menu_Qlasthit = self:MenuBool("Lasthit", true)
+  self.menu_Qlasthit = self:MenuBool("LaneClear", true)
   self.menu_Qjungle = self:MenuBool("Jungle", true)
 
   self.menu_WtooFarAway = self:MenuBool("Use W To Catch Axe", true)
@@ -115,7 +115,7 @@ if (Menu_Begin("Q Settings")) then
   self.menu_Qdistance = Menu_SliderInt("Catch Range (From Cursor)", self.menu_Qdistance, 300, 1000)
   self.menu_Qcombo = Menu_Bool("Combo", self.menu_Qcombo, self.menu)
   self.menu_Qharass = Menu_Bool("Harass", self.menu_Qharass, self.menu)
-  self.menu_Qlasthit = Menu_Bool("Lasthit", self.menu_Qlasthit, self.menu)
+  self.menu_Qlasthit = Menu_Bool("LaneClear", self.menu_Qlasthit, self.menu)
   self.menu_Qjungle = Menu_Bool("Jungle", self.menu_Qjungle, self.menu)
   Menu_End()
 end
@@ -207,9 +207,17 @@ end
   and GetOrbMode() == 1 and self.menu_Ecombo)
   or (GetOrbMode() == 3 and self.menu_Eharass)
   then
-    for k,v in pairs(self:GetEnemies(self.E.Range + 70)) do
+    for k,v in pairs(self:GetEnemies(self.E.Range - 120)) do
         self.E:Cast(v)
     end
+  end
+
+  if self.W:IsReady()
+ and GetOrbMode() == 1
+  and #self:GetEnemies(GetTrueAttackRange()) <= 0
+  and #self:GetEnemies(GetTrueAttackRange() + 100) >= 1
+  then
+        self.W:Cast(myHero)
   end
 
   local mousePos = Vector(GetMousePosX(), GetMousePosY(), GetMousePosZ())
@@ -222,8 +230,8 @@ end
 
   if self.W:IsReady()
   and self.menu_WtooFarAway
-  and GetDistance(axePos) / (myHero.MoveSpeed * 1000) < self.Q.LatestAxeCreateTick - GetTickCount() then
-    __PrintTextGame(GetDistance(axePos) / (myHero.MoveSpeed * 1000))
+  and GetDistance(axePos) / (myHero.MoveSpeed * 1000) < self.Q.LatestAxeCreateTick - GetTickCount()
+  then
       self.W:Cast(myHero)
   end
 
@@ -313,31 +321,8 @@ end
   if (GetOrbMode() == 4 or GetOrbMode() == 2)
   and target ~= nil
   and self.menu_Qlasthit
-  then -- Laneclear
-
-    self:GetAAQTarget()
-  end
-end
-
-function NechritoDraven:GetAAQTarget()
-
-lastT = Orbwalker:GetOrbwalkingTarget()
-  for i, minions in ipairs(MinionManager.Enemy) do
-      if (minions) then
-          minion = GetUnit(minions)
-
-          if minion.IsDead == false
-          and GetDistance(Vector(minion), Vector(myHero)) <= 800
-          and lastT.Addr ~= minion.Addr
-          then
-
-              if (myHero.CalcDamage(minion.Addr, myHero.TotalDmg) + self.Q:GetDamage(minion) > minion.HP
-              and myHero.CalcDamage(minion.Addr, myHero.TotalDmg) < minion.HP)
-              then
-                    self.Q:Cast(minion)
-              end
-          end
-      end
+  then
+    self.Q:Cast(target)
   end
 end
 
