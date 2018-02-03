@@ -13,7 +13,8 @@ end
 
 function NechritoVayne:__init()
 
-
+  myHero = GetMyHero()
+  --AntiGap = AntiGapcloser(nil)
 
 self.Q = Spell({Slot = 0,
                 SpellType = Enum.SpellType.SkillShot,
@@ -57,7 +58,6 @@ self.listSpellInterrup =
   Orbwalker:RegisterPreAttackCallback(function(...)  self:OnPreAttack(...) end)
 
   self:MenuValueDefault()
-  --AntiGap = AntiGapCloser()
 
    __PrintTextGame("<b><font color=\"#C70039\">Nechrito Vayne</font></b> <font color=\"#ffffff\">Loaded. Enjoy the mayhem</font>")
 end
@@ -190,17 +190,19 @@ end
 
 --[[
   target, enpos = AntiGap:AntiGapInfo()
-  if target and endPos then
 
-    if self.E:IsReady() and self.menu_Eantigapclose then
+  if target ~= nil then
+
+    if self.Q:IsReady() and self.menu_Qantigapclose then
+      pos = Vector(myHero) + (Vector(myHero) - Vector(endPos)):Normalized() * self.Q.Range
+      self.Q.tumblePosition = pos
+      self.Q:Cast(pos)
+    end
+
+    if self.E:IsReady() and GetDistance(Vector(myHero), Vector(target)) <= 800 and self.menu_Eantigapclose then
               CastSpellTarget(target.Addr, _E)
       return
      end
-
-    if self.Q:IsReady() and self.menu_Qantigapclose then
-      pos = endPos + (endPos - Vector(myHero)):Normalized() * self.Q.Range
-      self.Q:Cast(pos)
-    end
   end
 ]]
   if (self.E:IsReady()
@@ -237,14 +239,14 @@ function NechritoVayne:FlashE()
 
   for k,v in pairs(self:GetEnemies(1000)) do
 
-    if (IsValidTarget(v, 600)) then
+    if (IsValidTarget(v, 700)) then
 
       targetPos = Vector(v)
       playerPos = Vector(myHero)
 
       DrawCircleGame(playerPos.x, playerPos.y, playerPos.z,  425, Lua_ARGB(255, 255, 255, 0))
 
-      wallPos = self:GetWallPosition(v, 430)
+      wallPos = self:GetWallPosition(v.Addr, 435)
 
       if (wallPos) then -- Insec to wall
 
@@ -271,7 +273,7 @@ function NechritoVayne:FlashE()
 
             if (GetDistance(Vector(myHero), insecPos) > 425) then return end
 
-              CastSpellTarget(v.Addr, _E)
+              CastSpellTarget(v, _E)
               DelayAction(function() CastSpellToPos(insecPos.x, insecPos.z, self:GetFlashIndex()) end, 0.1)
             end
           end
@@ -443,18 +445,19 @@ function NechritoVayne:CastQ(target, force)
   tPos = Vector(target)
   newPos = Vector(tPos + (tPos - qToEPos):Normalized() * 100)
 
-  if (GetDistance(Vector(myHero), newPos) < self.Q.Range) then
+  if (GetDistance(newPos) < self.Q.Range) then
        self.Q:Cast(newPos)
        return
     end
   end
 
-    if GetDistance(Vector(myHero), Vector(target)) > GetTrueAttackRange() + 100 then
+    if GetDistance(Vector(target)) > GetTrueAttackRange() + 100 then
+      __PrintTextGame("?")
       self.Q:Cast(Vector(target))
       return
     end
 
-    kitePos = self:GetKitePosition(target, 410)
+    kitePos = self:GetKitePosition(target)
 
     if kitePos ~= nil then
       self.Q:Cast(kitePos)
@@ -470,31 +473,38 @@ function NechritoVayne:GetWallPosition(target, range)
         targetRotated = Vector(targetPosition.x + range, targetPosition.y, targetPosition.z)
         pos = Vector(self:RotateAroundPoint(targetRotated, targetPosition, angle))
 
-        if IsWall(pos.x, pos.y, pos.z) and GetDistance(Vector(myHero), pos) < range then
+        if IsWall(pos.x, pos.y, pos.z) and GetDistance(pos) < range then
             return pos
         end
     end
 end
 
-function NechritoVayne:GetKitePosition(target, range)
-
-    for i = 0, 360, 20 do
+function NechritoVayne:GetKitePosition(target)
+    for i = 0, 360, 45 do
       angle = i * (math.pi/180)
 
       targetPosition = Vector(target)
-      rot = Vector(targetPosition.x + range, targetPosition.y, targetPosition.z)
+      rot = Vector(targetPosition.x + self.Q.Range, targetPosition.y, targetPosition.z)
 
       pos = self:RotateAroundPoint(Vector(myHero), rot, angle)
       pos = Vector(myHero) + (Vector(myHero) - pos):Normalized() * self.Q.Range
 
-      dist = GetDistance(targetPosition, pos)
+      if (IsChampion(target.Addr)) then
+        for k,v in pairs(self:GetEnemies(800)) do
 
-      if dist < range then --__PrintTextGame("NOT VALID")
+          dist = GetDistance(v, pos) / 2
+          if (dist < GetTrueAttackRange() - 250) then
+             self.Q.tumblePosition = pos
+             return pos end
+           end
 
-      --  __PrintTextGame(dist)
-       self.Q.tumblePosition = pos
-       return pos end
-    end
+         else
+           dist = GetDistance(Vector(target), pos) / 2
+           if (dist < GetTrueAttackRange() - 250) then
+              self.Q.tumblePosition = pos
+              return pos end
+         end
+       end
     return nil
   end
 
