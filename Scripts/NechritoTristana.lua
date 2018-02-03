@@ -172,7 +172,7 @@ function NechritoTristana:OnDrawMenu()
 
   self.menu_SkinEnable = Menu_Bool("Enalble Mod Skin", self.menu_SkinEnable, self.menu)
   self.menu_SkinIndex = Menu_SliderInt("Set Skin", self.menu_SkinIndex, 0, 25, self.menu)
-
+  Menu_End()
 end
 
 function NechritoTristana:OnDraw()
@@ -190,6 +190,7 @@ function NechritoTristana:OnUpdate()
     or myHero.IsRecall
     or IsTyping()
     or IsDodging())
+    or not IsRiotOnTop()
     then return end
 
     SetLuaCombo(true)

@@ -174,7 +174,7 @@ if (IsDead(myHero.Addr)
 or myHero.IsRecall
 or IsTyping()
 or IsDodging())
-or IsRiotOnTop()
+or not IsRiotOnTop()
 then return end
 
 if self.menu_SkinEnable then
