@@ -13,6 +13,10 @@ end
 
 function NechritoVayne:__init()
 
+  SetLuaCombo(true)
+  SetLuaHarass(true)
+  SetLuaLaneClear(true)
+
   myHero = GetMyHero()
   --AntiGap = AntiGapcloser(nil)
 
@@ -145,7 +149,7 @@ end
 
 self.menu_SkinEnable = Menu_Bool("Enalble Mod Skin", self.menu_SkinEnable, self.menu)
 self.menu_SkinIndex = Menu_SliderInt("Set Skin", self.menu_SkinIndex, 0, 11, self.menu)
-
+  Menu_End()
 end
 
 function NechritoVayne:OnDraw()
@@ -170,11 +174,8 @@ if (IsDead(myHero.Addr)
 or myHero.IsRecall
 or IsTyping()
 or IsDodging())
+or IsRiotOnTop()
 then return end
-
-SetLuaCombo(true)
-SetLuaHarass(true)
-SetLuaLaneClear(true)
 
 if self.menu_SkinEnable then
   ModSkin(self.menu_SkinIndex)
