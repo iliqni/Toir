@@ -17,7 +17,6 @@ function NechritoDraven:__init()
   SetLuaHarass(true)
   SetLuaLaneClear(true)
 
-  myHero = GetMyHero()
   --AntiGap = AntiGapcloser(nil)
 
 self.Q = Spell({Slot = 0,
@@ -208,7 +207,7 @@ end
   and GetOrbMode() == 1 and self.menu_Ecombo)
   or (GetOrbMode() == 3 and self.menu_Eharass)
   then
-    for k,v in pairs(self:GetEnemies(1000)) do
+    for k,v in pairs(self:GetEnemies(self.E.Range + 70)) do
         self.E:Cast(v)
     end
   end

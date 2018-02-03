@@ -7,6 +7,10 @@ function NechritoTristana:__init()
   if GetChampName(GetMyChamp()) ~= "Tristana"
   then return end
 
+  SetLuaCombo(true)
+  SetLuaHarass(true)
+  SetLuaLaneClear(true)
+
 self.Q = Spell({Slot = 0,
                 SpellType = Enum.SpellType.Active})
 
@@ -192,10 +196,6 @@ function NechritoTristana:OnUpdate()
     or IsDodging())
     or not IsRiotOnTop()
     then return end
-
-    SetLuaCombo(true)
-    SetLuaHarass(true)
-    SetLuaLaneClear(true)
 
     if self.menu_SkinEnable then
       ModSkin(self.menu_SkinIndex)
