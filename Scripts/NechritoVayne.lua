@@ -484,14 +484,18 @@ function NechritoVayne:GetKitePosition(target)
       for k,v in pairs(self:GetEnemies(900)) do
 
         dist = GetDistance(v, pos) / 2
-        __PrintTextGame("Distance: " .. dist)
-        __PrintTextGame("My Range: " .. GetTrueAttackRange())
+        --__PrintTextGame("Distance: " .. dist)
+        --__PrintTextGame("My Range: " .. GetTrueAttackRange())
         if (dist < 380 and dist > 200) then
            return pos end
          end
 
-       else return pos end
-       __PrintTextGame("Index = " .. i)
+       else
+          dist = GetDistance(Vector(target), pos)
+          if dist < 380 and dist > 200 then
+          return pos end
+        end
+       --__PrintTextGame("Index = " .. i)
   end
     return nil
   end
