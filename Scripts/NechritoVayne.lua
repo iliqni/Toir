@@ -149,13 +149,14 @@ end
 
 function NechritoVayne:OnDraw()
 
-  if (self.menu_DrawE) then
-      if (self.menu_DrawReady and not self.E:IsReady()) then return end
+  if self.menu_DrawE then
+      if self.menu_DrawReady and not self.E:IsReady() then return end
+
       pos = Vector(myHero)
       DrawCircleGame(pos.x, pos.y, pos.z, self.E.Range, Lua_ARGB(255, 0, 204, 255))
   end
 
-  if (self.Q.tumblePosition ~= nil and self.menu_DrawQPos) then
+  if self.Q.tumblePosition ~= nil and self.menu_DrawQPos and GetDistance(self.Q.tumblePosition) < 600 then
     DrawCircleGame(self.Q.tumblePosition.x, self.Q.tumblePosition.y, self.Q.tumblePosition.z, 60, Lua_ARGB(255, 0, 204, 255))
   end
 end
@@ -421,24 +422,22 @@ end
 
 function NechritoVayne:CastQ(target, force)
 
+  castPos = nil
+
+  wallPos = self:GetWallPosition(target, 140)
+  qToEPos = self:GetWallPosition(target, 200)
+  kitePos = self:GetKitePosition(target)
+
   if self.menu_qPos == 1 then
     playerPos = Vector(myHero)
     mousePos =Vector(GetMousePosX(), GetMousePosY(), GetMousePosZ())
     final = playerPos:Extended(mousePos, 500)
-    self.Q.tumblePosition = final
-    self.Q:Cast(final)
-    return
-  end
-  wallPos = self:GetWallPosition(target, 140)
+    castPos = final
 
-  if (wallPos) then
-      self.Q:Cast(wallPos)
-      return
-  end
+  elseif (wallPos) then
+        castPos = wallPos
 
-  qToEPos = self:GetWallPosition(target, 200)
-
-  if (qToEPos
+  elseif (qToEPos
   and self.E:CanCast(target)
   and force) then
 
@@ -446,22 +445,17 @@ function NechritoVayne:CastQ(target, force)
   newPos = Vector(tPos + (tPos - qToEPos):Normalized() * 100)
 
   if (GetDistance(newPos) < self.Q.Range) then
-       self.Q:Cast(newPos)
-       return
+      castPos = newPos
     end
-  end
+  elseif GetDistance(Vector(target)) > GetTrueAttackRange() + 70 then
+          castPos = Vector(target)
 
-    if GetDistance(Vector(target)) > GetTrueAttackRange() + 100 then
-      __PrintTextGame("?")
-      self.Q:Cast(Vector(target))
-      return
+  elseif kitePos ~= nil then
+      castPos = kitePos
     end
 
-    kitePos = self:GetKitePosition(target)
-
-    if kitePos ~= nil then
-      self.Q:Cast(kitePos)
-    end
+    self.Q.tumblePosition = castPos
+    self.Q:Cast(castPos)
 end
 
 function NechritoVayne:GetWallPosition(target, range)
