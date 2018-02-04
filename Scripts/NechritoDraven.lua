@@ -210,7 +210,8 @@ end
   or (GetOrbMode() == 3 and self.menu_Eharass)
   then
     for k,v in pairs(self:GetEnemies(self.E.Range - 120)) do
-        self.E:Cast(v)
+      local pred = self.E:GetPrediction(v)
+        self.E:Cast(pred)
     end
   end
 
