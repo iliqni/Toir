@@ -46,7 +46,7 @@ self.listSpellInterrup =
 ["XerathLocusPulse"] = true,
 }
 
-AddEvent(Enum.Event.OnUpdate, function(...) self:OnUpdate(...) end)
+AddEvent(Enum.Event.OnTick, function(...) self:OnTick(...) end)
 AddEvent(Enum.Event.OnDraw, function(...) self:OnDraw(...) end)
 AddEvent(Enum.Event.OnAfterAttack, function(...) self:OnAfterAttack(...) end)
 AddEvent(Enum.Event.OnBeforeAttack, function(...) self:OnBeforeAttack(...) end)
@@ -188,7 +188,7 @@ function NechritoTristana:OnDraw()
   end
 end
 
-function NechritoTristana:OnUpdate()
+function NechritoTristana:OnTick()
 
   if (IsDead(myHero.Addr)
     or myHero.IsRecall
@@ -205,8 +205,8 @@ function NechritoTristana:OnUpdate()
 
       if GetOrbMode() == 1 and self.menu_Rkill then
 
-        if  self.R:GetDamage(v) + self:GetEDmg(v) > v.HP
-        and self.E:GetDamage(v) < v.HP
+        if  self:RealDamage(v, self.R:GetDamage(v) + self:GetEDmg(v)) > GetRealHP(v, 1)
+        and self.E:GetDamage(v) < GetRealHP(v, 1)
         and self.R:CanCast(v) then
           CastSpellTarget(v.Addr, _R)
           end
@@ -344,6 +344,62 @@ function NechritoTristana:GetHeroes()
 	SearchAllChamp()
 	local t = pObjChamp
 	return t
+end
+
+function NechritoTristana:RealDamage(target, damage)
+
+		if target.HasBuff("KindredRNoDeathBuff") then
+			return 0
+		end
+
+		local pbuff = GetBuff(GetBuffByName(target, "UndyingRage"))
+
+		if target.HasBuff("UndyingRage") and pbuff.EndT > GetTimeGame() + 0.3  then
+			return 0
+		end
+
+		if target.HasBuff("JudicatorIntervention") then
+			return 0
+		end
+
+		local pbuff2 = GetBuff(GetBuffByName(target, "ChronoShift"))
+		if target.HasBuff("ChronoShift") and pbuff2.EndT > GetTimeGame() + 0.3 then
+			return 0
+		end
+
+		if target.HasBuff("FioraW") then
+			return 0
+		end
+
+		if target.HasBuff("ShroudofDarkness") then
+			return 0
+		end
+
+		if target.HasBuff("SivirShield") then
+			return 0
+		end
+
+		if target.HasBuff("Moredkaiser") then
+			damage = damage - target.MP
+		end
+
+		if myHero.HasBuff("SummonerExhaust") then
+			damage = damage * 0.6;
+		end
+
+		if target.HasBuff("BlitzcrankManaBarrierCD") and target.HasBuff("ManaBarrier") then
+			damage = damage - target.MP / 2
+		end
+
+		if target.HasBuff("GarenW") then
+			damage = damage * 0.7;
+		end
+
+		if target.HasBuff("ferocioushowl") then
+			damage = damage * 0.7;
+		end
+
+		return damage
 end
 
 function NechritoTristana:MenuBool(stringKey, bool)

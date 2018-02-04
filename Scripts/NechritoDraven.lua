@@ -82,7 +82,7 @@ function NechritoDraven:MenuValueDefault()
   self.menu = "Nechrito Draven"
 
   self.menu_QcatchMode = self:MenuComboBox("Catch Mode ", 0)
-  self.menu_Qdistance = self:MenuSliderInt("Catch Range (From Cursor)", 600)
+  self.menu_Qdistance = self:MenuSliderInt("Catch Range (From Cursor)", 800)
   self.menu_Qcombo = self:MenuBool("Combo", true)
   self.menu_Qharass = self:MenuBool("Harass", true)
   self.menu_Qlasthit = self:MenuBool("LaneClear", true)
@@ -186,8 +186,10 @@ end
   and GetOrbMode() == 1)
   then
     for k,v in pairs(self:GetEnemies(1000)) do
-      if v.HP < self.R:GetDamage(v) * 2 + myHero.CalcDamage(v, myHero.TotalDmg) then
-          self.R:Cast(v)
+      if GetRealHP(v, 1) < self:RealDamage(v, self.R:GetDamage(v) * 2 + myHero.CalcDamage(v, myHero.TotalDmg)) then
+        local pred = self.R:GetPrediction(v)
+
+          self.R:Cast(pred)
       end
     end
   end
@@ -214,8 +216,9 @@ end
 
   if self.W:IsReady()
  and GetOrbMode() == 1
-  and #self:GetEnemies(GetTrueAttackRange()) <= 0
-  and #self:GetEnemies(GetTrueAttackRange() + 100) >= 1
+ and (myHero.HasBuffType(10)
+ or #self:GetEnemies(GetTrueAttackRange()) <= 0
+ and #self:GetEnemies(GetTrueAttackRange() + 200) >= 1)
   then
         self.W:Cast(myHero)
   end
@@ -348,6 +351,62 @@ function NechritoDraven:GetEnemies(range)
     end
   end
   return t
+end
+
+function NechritoDraven:RealDamage(target, damage)
+
+		if target.HasBuff("KindredRNoDeathBuff") then
+			return 0
+		end
+
+		local pbuff = GetBuff(GetBuffByName(target, "UndyingRage"))
+
+		if target.HasBuff("UndyingRage") and pbuff.EndT > GetTimeGame() + 0.3  then
+			return 0
+		end
+
+		if target.HasBuff("JudicatorIntervention") then
+			return 0
+		end
+
+		local pbuff2 = GetBuff(GetBuffByName(target, "ChronoShift"))
+		if target.HasBuff("ChronoShift") and pbuff2.EndT > GetTimeGame() + 0.3 then
+			return 0
+		end
+
+		if target.HasBuff("FioraW") then
+			return 0
+		end
+
+		if target.HasBuff("ShroudofDarkness") then
+			return 0
+		end
+
+		if target.HasBuff("SivirShield") then
+			return 0
+		end
+
+		if target.HasBuff("Moredkaiser") then
+			damage = damage - target.MP
+		end
+
+		if myHero.HasBuff("SummonerExhaust") then
+			damage = damage * 0.6;
+		end
+
+		if target.HasBuff("BlitzcrankManaBarrierCD") and target.HasBuff("ManaBarrier") then
+			damage = damage - target.MP / 2
+		end
+
+		if target.HasBuff("GarenW") then
+			damage = damage * 0.7;
+		end
+
+		if target.HasBuff("ferocioushowl") then
+			damage = damage * 0.7;
+		end
+
+		return damage
 end
 
 function NechritoDraven:MenuBool(stringKey, bool)
