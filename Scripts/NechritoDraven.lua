@@ -186,7 +186,7 @@ end
   and GetOrbMode() == 1)
   then
     for k,v in pairs(self:GetEnemies(1000)) do
-      if v.HP < self.R:GetDamage(v) + myHero.CalcDamage(v, myHero.TotalDmg) then
+      if v.HP < self.R:GetDamage(v) * 2 + myHero.CalcDamage(v, myHero.TotalDmg) then
           self.R:Cast(v)
       end
     end
@@ -240,7 +240,7 @@ end
   if self.menu_QcatchMode == 0
   or self.menu_QcatchMode == 1 and GetOrbMode() == 1 then
 
-    if GetDistance(axePos) > 100 then
+    if GetDistance(axePos) > 50 then
       SetOrbwalkingPoint(axePos.x, axePos.z)
     else
       SetOrbwalkingPoint(mousePos.x, mousePos.z)
