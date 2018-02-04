@@ -186,7 +186,7 @@ end
   then
     if (CountEnemyChampAroundObject(myHero.Addr, 1000) >= self.menu_Rcount) then
       for k,v in pairs(self:GetEnemies(1000)) do
-        if (v.HP < (myHero.CalcDamage(v.Addr, myHero.TotalDmg) * self.menu_Rkillable) and GetDistance(Vector(v), Vector(myHero)) <= 1000) then
+        if (GetRealHP(v, 1) < (myHero.CalcDamage(v.Addr, myHero.TotalDmg) * self.menu_Rkillable) and GetDistance(Vector(v), Vector(myHero)) <= 1000) then
           self.R:Cast(v)
         end
       end
@@ -487,13 +487,13 @@ function NechritoVayne:GetKitePosition(target)
         dist = GetDistance(v, pos) / 2
         --__PrintTextGame("Distance: " .. dist)
         --__PrintTextGame("My Range: " .. GetTrueAttackRange())
-        if (dist < 380 and dist > 200) then
+        if (dist < 380 and dist > 100) then
            return pos end
          end
 
        else
           dist = GetDistance(Vector(target), pos)
-          if dist < 380 and dist > 200 then
+          if dist > 300 then
           return pos end
         end
        --__PrintTextGame("Index = " .. i)
