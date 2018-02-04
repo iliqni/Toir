@@ -82,7 +82,7 @@ function NechritoDraven:MenuValueDefault()
   self.menu = "Nechrito Draven"
 
   self.menu_QcatchMode = self:MenuComboBox("Catch Mode ", 0)
-  self.menu_Qdistance = self:MenuSliderInt("Catch Range (From Cursor)", 1500)
+  self.menu_Qdistance = self:MenuSliderInt("Catch Range (From Cursor)", 900)
   self.menu_Qcombo = self:MenuBool("Combo", true)
   self.menu_Qharass = self:MenuBool("Harass", true)
   self.menu_Qlasthit = self:MenuBool("LaneClear", true)
@@ -236,6 +236,7 @@ end
   end
 
   local mousePos = Vector(GetMousePosX(), GetMousePosY(), GetMousePosZ())
+
   local axe = self:GetBestAxe()
 
   if axe == nil  then
@@ -243,6 +244,7 @@ end
    return end
 
   local axePos = Vector(axe)
+  local axeExtendedToMouse = axePos + (axePos - mousePos):Normalized() * -80
 
   if self.W:IsReady()
   and not myHero.HasBuff("dravenfurybuff")
@@ -257,11 +259,7 @@ end
   if self.menu_QcatchMode == 0
   or self.menu_QcatchMode == 1 and GetOrbMode() == 1 then
 
-    if GetDistance(axePos) > 70 then
-      SetOrbwalkingPoint(axePos.x, axePos.z)
-    else
-      SetOrbwalkingPoint(mousePos.x, mousePos.z)
-    end
+  SetOrbwalkingPoint(axeExtendedToMouse.x, axeExtendedToMouse.z)
   end
 end
 
