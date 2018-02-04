@@ -222,9 +222,10 @@ end
 
   local mousePos = Vector(GetMousePosX(), GetMousePosY(), GetMousePosZ())
   local axe = self:GetBestAxe()
+
   if axe == nil  then
-    SetOrbwalkingPoint(mousePos.x, mousePos.z)
-     return end
+      SetOrbwalkingPoint(mousePos.x, mousePos.z)
+   return end
 
   local axePos = Vector(axe)
 
@@ -240,7 +241,7 @@ end
   if self.menu_QcatchMode == 0
   or self.menu_QcatchMode == 1 and GetOrbMode() == 1 then
 
-    if GetDistance(axePos) > 50 then
+    if GetDistance(axePos) > 40 then
       SetOrbwalkingPoint(axePos.x, axePos.z)
     else
       SetOrbwalkingPoint(mousePos.x, mousePos.z)
