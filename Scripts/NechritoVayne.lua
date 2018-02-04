@@ -73,7 +73,6 @@ function NechritoVayne:MenuValueDefault()
 
   self.menu_qPos = self:MenuComboBox("Position ", 0)
   self.menu_QtoEPos = self:MenuBool("Q To E Position If Possible", true)
-  self.menu_qDistance = self:MenuSliderInt("Dash Distance From Target", 370)
   --self.menu_Qantigapclose = self:MenuBool("AntiGapCloser", true)
   self.menu_Qcombo = self:MenuBool("Combo", true)
   self.menu_Qharass = self:MenuBool("Harass", true)
@@ -109,7 +108,6 @@ if not Menu_Begin(self.menu) then return end
 if (Menu_Begin("Q Settings")) then
   self.menu_qPos = Menu_ComboBox("Position ", self.menu_qPos, "Automatic\0Mouse\0\0", self.menu)
   self.menu_QtoEPos = Menu_Bool("Q To E Position If Possible", self.menu_QtoEPos, self.menu)
-  self.menu_qDistance = Menu_SliderInt("Dash Distance From Target", self.menu_qDistance, 0, 550)
   --self.menu_Qantigapclose = Menu_Bool("AntiGapCloser", self.menu_Qantigapclose, self.menu)
   self.menu_Qcombo = Menu_Bool("Combo", self.menu_Qcombo, self.menu)
   self.menu_Qharass = Menu_Bool("Harass", self.menu_Qharass, self.menu)
@@ -470,13 +468,13 @@ end
 function NechritoVayne:GetKitePosition(target)
   self.Q.tumblePositions = {}
 
-  for i = 0, 360, 45 do
+  for i = 0, 360, 22.5 do
     angle = i * (math.pi/180)
 
     myPos = Vector(myHero)
-    tPos = myPos + (myPos - Vector(target)):Normalized() * self.menu_qDistance
+    tPos = Vector(target)
 
-    rot = self:RotateAroundPoint(Vector(myHero), tPos, angle)
+    rot = self:RotateAroundPoint(tPos, myPos, angle)
     pos = myPos + (myPos - rot):Normalized() * self.Q.Range
 
      table.insert(self.Q.tumblePositions, pos)
@@ -487,13 +485,13 @@ function NechritoVayne:GetKitePosition(target)
         dist = GetDistance(v, pos) / 2
         --__PrintTextGame("Distance: " .. dist)
         --__PrintTextGame("My Range: " .. GetTrueAttackRange())
-        if (dist < 380 and dist > 100) then
+        if (dist < 340 and dist > 200) then
            return pos end
          end
 
        else
           dist = GetDistance(Vector(target), pos)
-          if dist > 300 then
+          if dist > 250 and dist < 380 then
           return pos end
         end
        --__PrintTextGame("Index = " .. i)
