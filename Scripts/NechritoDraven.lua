@@ -41,7 +41,7 @@ self.E = Spell({Slot = 2,
 
 self.R = Spell({Slot = 3,
                 SpellType = Enum.SpellType.SkillShot,
-                Range = 5000,
+                Range = 1300,
                 SkillShotType = Enum.SkillShotType.Line,
                 Collision = false,
                 Width = 160,
@@ -187,9 +187,14 @@ end
   then
     for k,v in pairs(self:GetEnemies(1000)) do
       if GetRealHP(v, 1) < self:RealDamage(v, self.R:GetDamage(v) * 2 + myHero.CalcDamage(v, myHero.TotalDmg)) then
-        local pred = self.R:GetPrediction(v)
+        local castPosX, castPosZ, unitPosX, unitPosZ, hitChance, _aoeTargetsHitCount =
+        GetPredictionCore(v.Addr, 0, self.R.Delay, self.R.Width, self.R.Range, self.R.Speed, myHero.x, myHero.z, false, false)
 
-          self.R:Cast(pred)
+        if castPosX > 0 and castPosZ > 0 and hitChance >= 5 then
+            local castPos = Vector(castPosX, v.y, castPosZ)
+
+            self.R:Cast(castPos)
+          end
       end
     end
   end
@@ -210,8 +215,14 @@ end
   or (GetOrbMode() == 3 and self.menu_Eharass)
   then
     for k,v in pairs(self:GetEnemies(self.E.Range - 120)) do
-      local pred = self.E:GetPrediction(v)
-        self.E:Cast(pred)
+      local castPosX, castPosZ, unitPosX, unitPosZ, hitChance, _aoeTargetsHitCount =
+      GetPredictionCore(v.Addr, 0, self.E.Delay, self.E.Width, self.E.Range, self.E.Speed, myHero.x, myHero.z, true, false)
+
+      if castPosX > 0 and castPosZ > 0 and hitChance >= 4 then
+          local castPos = Vector(castPosX, v.y, castPosZ)
+
+          self.E:Cast(castPos)
+        end
     end
   end
 
@@ -234,6 +245,7 @@ end
   local axePos = Vector(axe)
 
   if self.W:IsReady()
+  and not myHero.HasBuff("dravenfurybuff")
   and self.menu_WtooFarAway
   and GetDistance(axePos) / (myHero.MoveSpeed * 1000) < self.Q.LatestAxeCreateTick - GetTickCount()
   then
@@ -306,14 +318,26 @@ end
 
 function NechritoDraven:OnBeforeAttack(target)
 
+  if not (self.Q:IsReady()) then return end
+
+  local axeCount = #self.Q.AxePositions
+
+  if myHero.HasBuff("DravenSpinning") then
+     axeCount = axeCount + 1
+  end
+
+   if myHero.HasBuff("dravenspinningleft") then
+     axeCount = axeCount + 1
+   end
+
+   if axeCount >= 2 then return end
+
   if (IsJungleMonster(target.Addr) and GetOrbMode() == 4) then
 
       if(self.Q:IsReady() and self.menu_Qjungle) then
         self.Q:Cast(target)
     end
   end
-
-if not (self.Q:IsReady()) then return end
 
 if (GetOrbMode() == 1 and self.menu_Qcombo) then -- Combo
       self.Q:Cast(target)
