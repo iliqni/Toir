@@ -82,7 +82,7 @@ function NechritoDraven:MenuValueDefault()
   self.menu = "Nechrito Draven"
 
   self.menu_QcatchMode = self:MenuComboBox("Catch Mode ", 0)
-  self.menu_Qdistance = self:MenuSliderInt("Catch Range (From Cursor)", 800)
+  self.menu_Qdistance = self:MenuSliderInt("Catch Range (From Cursor)", 1500)
   self.menu_Qcombo = self:MenuBool("Combo", true)
   self.menu_Qharass = self:MenuBool("Harass", true)
   self.menu_Qlasthit = self:MenuBool("LaneClear", true)
@@ -112,7 +112,7 @@ if not Menu_Begin(self.menu) then return end
 
 if (Menu_Begin("Q Settings")) then
   self.menu_QcatchMode = Menu_ComboBox("Catch Mode ", self.menu_QcatchMode, "Always\0Combo Only\0 Disabled\0\0", self.menu)
-  self.menu_Qdistance = Menu_SliderInt("Catch Range (From Cursor)", self.menu_Qdistance, 300, 1000)
+  self.menu_Qdistance = Menu_SliderInt("Catch Range (From Cursor)", self.menu_Qdistance, 300, 1500)
   self.menu_Qcombo = Menu_Bool("Combo", self.menu_Qcombo, self.menu)
   self.menu_Qharass = Menu_Bool("Harass", self.menu_Qharass, self.menu)
   self.menu_Qlasthit = Menu_Bool("LaneClear", self.menu_Qlasthit, self.menu)
@@ -216,9 +216,9 @@ end
   then
     for k,v in pairs(self:GetEnemies(self.E.Range - 120)) do
       local castPosX, castPosZ, unitPosX, unitPosZ, hitChance, _aoeTargetsHitCount =
-      GetPredictionCore(v.Addr, 0, self.E.Delay, self.E.Width, self.E.Range, self.E.Speed, myHero.x, myHero.z, true, false)
+      GetPredictionCore(v.Addr, 0, self.E.Delay, self.E.Width / 2, self.E.Range, self.E.Speed, myHero.x, myHero.z, true, false)
 
-      if castPosX > 0 and castPosZ > 0 and hitChance >= 4 then
+      if castPosX > 0 and castPosZ > 0 and hitChance >= 5 then
           local castPos = Vector(castPosX, v.y, castPosZ)
 
           self.E:Cast(castPos)
@@ -247,7 +247,7 @@ end
   if self.W:IsReady()
   and not myHero.HasBuff("dravenfurybuff")
   and self.menu_WtooFarAway
-  and GetDistance(axePos) / (myHero.MoveSpeed * 1000) < self.Q.LatestAxeCreateTick - GetTickCount()
+  and GetDistance(axePos) / (myHero.MoveSpeed * 1000) * 0.75 < self.Q.LatestAxeCreateTick - GetTickCount()
   then
       self.W:Cast(myHero)
   end
@@ -257,7 +257,7 @@ end
   if self.menu_QcatchMode == 0
   or self.menu_QcatchMode == 1 and GetOrbMode() == 1 then
 
-    if GetDistance(axePos) > 40 then
+    if GetDistance(axePos) > 70 then
       SetOrbwalkingPoint(axePos.x, axePos.z)
     else
       SetOrbwalkingPoint(mousePos.x, mousePos.z)
