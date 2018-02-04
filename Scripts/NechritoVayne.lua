@@ -26,13 +26,17 @@ self.Q = Spell({Slot = 0,
                 tumblePositions = {},
                 })
 
+
 self.W = Spell({Slot = 1,
                 SpellType = Enum.SpellType.Active})
 
 self.E = Spell({Slot = 2,
                 SpellType = Enum.SpellType.Targetted,
-                Range = 550
+                Range = 550,
+                condemnTable = {},
         })
+
+        condemnTable = {}
 
 self.R = Spell({Slot = 3, SpellType = Enum.SpellType.Active, Invisible = false, InvisTick = 0})
 
@@ -94,7 +98,7 @@ function NechritoVayne:MenuValueDefault()
 
   self.menu_DrawReady = self:MenuBool("Only Draw When Ready", true)
   self.menu_DrawE = self:MenuBool("Draw E Range", false)
-  self.menu_DrawQPos = self:MenuBool("Draw Q Position (Debug)", false)
+  self.menu_DrawDebug = self:MenuBool("Draw Debug", false)
 
   self.menu_SkinEnable = self:MenuBool("Enalble Mod Skin", false)
 	self.menu_SkinIndex = self:MenuSliderInt("Skin", 11)
@@ -141,7 +145,7 @@ end
 if (Menu_Begin("Drawings")) then
   self.menu_DrawReady = Menu_Bool("Only Draw When Ready", self.menu_DrawReady, self.menu)
   self.menu_DrawE = Menu_Bool("Draw E Range", self.menu_DrawE, self.menu)
-  self.menu_DrawQPos = Menu_Bool("Draw Q Position (Debug)", self.menu_DrawQPos, self.menu)
+  self.menu_DrawDebug = Menu_Bool("Draw Debug", self.menu_DrawDebug, self.menu)
   Menu_End()
 end
 
@@ -155,13 +159,22 @@ function NechritoVayne:OnDraw()
   if self.menu_DrawE then
       if self.menu_DrawReady and not self.E:IsReady() then return end
 
-      pos = Vector(myHero)
+      local pos = Vector(myHero)
       DrawCircleGame(pos.x, pos.y, pos.z, self.E.Range, Lua_ARGB(255, 0, 204, 255))
   end
 
-  if self.menu_DrawQPos and self.Q.tumblePositions ~= nil then
-    for k, v in pairs(self.Q.tumblePositions) do
-      DrawCircleGame(v.x, v.y, v.z, 60, Lua_ARGB(255, 0, 204, 255))
+  if self.menu_DrawDebug and GetOrbMode() == 1 then
+
+    if self.Q.tumblePositions ~= nil then
+      for k, v in pairs(self.Q.tumblePositions) do
+            DrawCircleGame(v.x, v.y, v.z, 60, Lua_ARGB(255, 0, 204, 255))
+          end
+        end
+
+    if self.E.condemnTable ~= nil then
+    for k, v in pairs(self.E.condemnTable) do
+        DrawCircleGame(v.x, v.y, v.z, 60, Lua_ARGB(255, 0, 204, 255))
+      end
     end
   end
 end
@@ -174,6 +187,16 @@ or IsTyping()
 or IsDodging())
 or not IsRiotOnTop()
 then return end
+
+  if GetOrbMode() == 0 then
+    if self.E.condemnTable ~= nil then
+      self.E.condemnTable = {}
+    end
+
+    if self.Q.tumblePositions ~= nil then
+      self.Q.tumblePositions = {}
+    end
+  end
 
 if self.menu_SkinEnable then
   ModSkin(self.menu_SkinIndex)
@@ -247,15 +270,11 @@ function NechritoVayne:FlashE()
       targetPos = Vector(v)
       playerPos = Vector(myHero)
 
-      DrawCircleGame(playerPos.x, playerPos.y, playerPos.z,  425, Lua_ARGB(255, 255, 255, 0))
-
       wallPos = self:GetWallPosition(v.Addr, 435)
 
       if (wallPos) then -- Insec to wall
 
         insecPos = targetPos + (targetPos - wallPos):Normalized() * 200
-
-        DrawCircleGame(insecPos.x, insecPos.y, insecPos.z,  50, Lua_ARGB(255, 0, 255, 0))
 
         if (GetDistance(insecPos, playerPos) <= 425) then
           CastSpellTarget(v.Addr, _E)
@@ -271,8 +290,6 @@ function NechritoVayne:FlashE()
             turretPos = Vector(GetPos(v))
 
             insecPos = Vector(targetPos + (targetPos - turretPos):Normalized() * 150)
-
-            DrawCircleGame(insecPos.x, insecPos.y, insecPos.z,  50, Lua_ARGB(255, 0, 255, 0))
 
             if (GetDistance(Vector(myHero), insecPos) > 425) then return end
 
@@ -294,9 +311,11 @@ end
 
 function NechritoVayne:Condemn()
 
+
   for k,v in pairs(self:GetEnemies(1000)) do
 
-    if (IsValidTarget(v, 1500)) then
+    if (IsValidTarget(v, self.E.Range)) then
+      self.E.condemnTable = {}
 
       targetPos = Vector(v)
       path = Vector(v.GetPath(0))
@@ -309,11 +328,17 @@ function NechritoVayne:Condemn()
         final = Vector(posAfterTime + (posAfterTime - Vector(myHero)):Normalized() * i)
         finalT = Vector(targetPos + (targetPos - Vector(myHero)):Normalized() * i)
 
-        if time == 0 then
-          finalT = final
+        table.insert(self.E.condemnTable, final)
+
+        if not v.IsMove then
+          final = finalT
+        else
+          table.insert(self.E.condemnTable, finalT)
         end
 
-        if IsWall(final.x, final.y, final.z) and IsWall(finalT.x, finalT.y, finalT.z) and IsValidTarget(v, self.E.Range) then
+        if IsWall(final.x, final.y, final.z)
+        and IsWall(finalT.x, finalT.y, finalT.z)
+        then
           CastSpellTarget(v.Addr, _E)
         end
       end
