@@ -187,16 +187,15 @@ end
   then
     for k,v in pairs(self:GetEnemies(1000)) do
       if GetRealHP(v, 1) < self:RealDamage(v, self.R:GetDamage(v) * 2 + myHero.CalcDamage(v, myHero.TotalDmg)) then
-        --[[
+
         local castPosX, castPosZ, unitPosX, unitPosZ, hitChance, _aoeTargetsHitCount =
-        GetPredictionCore(v.Addr, 0, self.R.Delay, self.R.Width, self.R.Range, self.R.Speed, myHero.x, myHero.z, false, false)
+        GetPredictionCore(v.Addr, 0, self.R.Delay, self.R.Width / 2, self.R.Range, self.R.Speed, myHero.x, myHero.z, false, false)
 
         if castPosX > 0 and castPosZ > 0 and hitChance >= 4 then
             local castPos = Vector(castPosX, v.y, castPosZ)
 
             self.R:Cast(castPos)
-          end]]
-          self.R:Cast(v)
+          end
       end
     end
   end
@@ -217,7 +216,7 @@ end
   or (GetOrbMode() == 3 and self.menu_Eharass)
   then
     for k,v in pairs(self:GetEnemies(self.E.Range - 120)) do
-      --[[
+
       local castPosX, castPosZ, unitPosX, unitPosZ, hitChance, _aoeTargetsHitCount =
       GetPredictionCore(v.Addr, 0, self.E.Delay, self.E.Width / 2, self.E.Range, self.E.Speed, myHero.x, myHero.z, true, false)
 
@@ -225,9 +224,7 @@ end
           local castPos = Vector(castPosX, v.y, castPosZ)
 
           self.E:Cast(castPos)
-        end]]
-
-        self.E:Cast(v)
+        end
     end
   end
 
