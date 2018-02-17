@@ -17,7 +17,6 @@ function NechritoVayne:__init()
   SetLuaHarass(true)
   SetLuaLaneClear(true)
 
-  myHero = GetMyHero()
   --AntiGap = AntiGapcloser(nil)
 
 self.Q = Spell({Slot = 0,
@@ -67,7 +66,6 @@ self.listSpellInterrup =
   Orbwalker:RegisterPreAttackCallback(function(...)  self:OnPreAttack(...) end)
 
   self:MenuValueDefault()
-
    __PrintTextGame("<b><font color=\"#C70039\">Nechrito Vayne</font></b> <font color=\"#ffffff\">Loaded. Enjoy the mayhem</font>")
 end
 
@@ -99,10 +97,6 @@ function NechritoVayne:MenuValueDefault()
   self.menu_DrawReady = self:MenuBool("Only Draw When Ready", true)
   self.menu_DrawE = self:MenuBool("Draw E Range", false)
   self.menu_DrawDebug = self:MenuBool("Draw Debug", false)
-
-  self.menu_SkinEnable = self:MenuBool("Enalble Mod Skin", false)
-	self.menu_SkinIndex = self:MenuSliderInt("Skin", 11)
-
 end
 
 function NechritoVayne:OnDrawMenu()
@@ -148,9 +142,6 @@ if (Menu_Begin("Drawings")) then
   self.menu_DrawDebug = Menu_Bool("Draw Debug", self.menu_DrawDebug, self.menu)
   Menu_End()
 end
-
-self.menu_SkinEnable = Menu_Bool("Enalble Mod Skin", self.menu_SkinEnable, self.menu)
-self.menu_SkinIndex = Menu_SliderInt("Set Skin", self.menu_SkinIndex, 0, 11, self.menu)
   Menu_End()
 end
 
@@ -180,6 +171,7 @@ function NechritoVayne:OnDraw()
 end
 
 function NechritoVayne:OnTick()
+  myHero = GetMyHero()
 
 if (IsDead(myHero.Addr)
 or myHero.IsRecall
@@ -198,10 +190,6 @@ then return end
     end
   end
 
-if self.menu_SkinEnable then
-  ModSkin(self.menu_SkinIndex)
-end
-
   if (self.R:IsReady()
   and GetOrbMode() == 1)
   then
@@ -219,16 +207,15 @@ end
 
   if target ~= nil then
 
-    if self.Q:IsReady() and self.menu_Qantigapclose then
+    if self.E:IsReady() and GetDistance(Vector(myHero), Vector(target)) <= self.E.Range and self.menu_Eantigapclose then
+              CastSpellTarget(target.Addr, _E)
+      return
+
+   elseif self.Q:IsReady() and self.menu_Qantigapclose then
       pos = Vector(myHero) + (Vector(myHero) - Vector(endPos)):Normalized() * self.Q.Range
       self.Q.tumblePosition = pos
       self.Q:Cast(pos)
     end
-
-    if self.E:IsReady() and GetDistance(Vector(myHero), Vector(target)) <= 800 and self.menu_Eantigapclose then
-              CastSpellTarget(target.Addr, _E)
-      return
-     end
   end
 ]]
   if (self.E:IsReady()
@@ -479,7 +466,7 @@ function NechritoVayne:GetWallPosition(target, range)
     range = range or 400
 
     for i= 0, 360, 45 do
-        angle = i * math.pi/180
+        angle = i * (math.pi/180)
         targetPosition = Vector(GetPos(target))
         targetRotated = Vector(targetPosition.x + range, targetPosition.y, targetPosition.z)
         pos = Vector(self:RotateAroundPoint(targetRotated, targetPosition, angle))
@@ -505,18 +492,19 @@ function NechritoVayne:GetKitePosition(target)
      table.insert(self.Q.tumblePositions, pos)
 
     if (IsChampion(target.Addr)) then
+
       for k,v in pairs(self:GetEnemies(900)) do
 
         dist = GetDistance(v, pos) / 2
         --__PrintTextGame("Distance: " .. dist)
         --__PrintTextGame("My Range: " .. GetTrueAttackRange())
-        if (dist < 340 and dist > 200) then
+        if (dist < 340 and dist > 270) then
            return pos end
          end
 
        else
           dist = GetDistance(Vector(target), pos)
-          if dist > 250 and dist < 380 then
+          if dist < 340 and dist > 270 then
           return pos end
         end
        --__PrintTextGame("Index = " .. i)
