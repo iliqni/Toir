@@ -95,10 +95,6 @@ function NechritoTristana:MenuValueDefault()
 
   self.menu_DrawReady = self:MenuBool("Only Draw When Ready", true)
   self.menu_DrawW = self:MenuBool("Draw W Range", false)
-
-  self.menu_SkinEnable = self:MenuBool("Enalble Mod Skin", false)
-	self.menu_SkinIndex = self:MenuSliderInt("Skin", 11)
-
 end
 
 function NechritoTristana:Whitelist(unit)
@@ -174,8 +170,6 @@ function NechritoTristana:OnDrawMenu()
     Menu_End()
   end
 
-  self.menu_SkinEnable = Menu_Bool("Enalble Mod Skin", self.menu_SkinEnable, self.menu)
-  self.menu_SkinIndex = Menu_SliderInt("Set Skin", self.menu_SkinIndex, 0, 25, self.menu)
   Menu_End()
 end
 
@@ -196,10 +190,6 @@ function NechritoTristana:OnTick()
     or IsDodging())
     or not IsRiotOnTop()
     then return end
-
-    if self.menu_SkinEnable then
-      ModSkin(self.menu_SkinIndex)
-    end
 
     for k,v in pairs(self:GetEnemies(GetTrueAttackRange())) do
 
