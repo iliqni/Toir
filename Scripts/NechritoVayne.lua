@@ -481,13 +481,13 @@ function NechritoVayne:GetKitePosition(target)
   self.Q.tumblePositions = {}
 
   for i = 0, 360, 22.5 do
-    angle = i * (math.pi/180)
+    local angle = i * (math.pi/180)
 
-    myPos = Vector(myHero)
-    tPos = Vector(target)
+    local myPos = Vector(myHero)
+    local tPos = Vector(target)
 
-    rot = self:RotateAroundPoint(tPos, myPos, angle)
-    pos = myPos + (myPos - rot):Normalized() * self.Q.Range
+    local rot = self:RotateAroundPoint(tPos, myPos, angle)
+    local pos = myPos + (myPos - rot):Normalized() * self.Q.Range
 
      table.insert(self.Q.tumblePositions, pos)
 
@@ -495,17 +495,24 @@ function NechritoVayne:GetKitePosition(target)
 
       for k,v in pairs(self:GetEnemies(900)) do
 
-        dist = GetDistance(v, pos) / 2
+        local dist = GetDistance(v, pos) / 2
         --__PrintTextGame("Distance: " .. dist)
         --__PrintTextGame("My Range: " .. GetTrueAttackRange())
         if (dist < 340 and dist > 270) then
-           return pos end
-         end
+            return pos
+      end
+    end
 
-       else
-          dist = GetDistance(Vector(target), pos)
+     else
+          local dist = GetDistance(Vector(target), pos)
           if dist < 340 and dist > 270 then
           return pos end
+        end
+
+        if i >= 360 then
+          local mousePos =Vector(GetMousePosX(), GetMousePosY(), GetMousePosZ())
+          local final = Vector(myHero):Extended(mousePos, 500)
+          return final
         end
        --__PrintTextGame("Index = " .. i)
   end
