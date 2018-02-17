@@ -101,9 +101,6 @@ function NechritoDraven:MenuValueDefault()
   self.menu_DrawE = self:MenuBool("Draw E Range", false)
   self.menu_DrawQPos = self:MenuBool("Draw Q Position (Debug)", false)
 
-  self.menu_SkinEnable = self:MenuBool("Enalble Mod Skin", false)
-	self.menu_SkinIndex = self:MenuSliderInt("Skin", 12)
-
 end
 
 function NechritoDraven:OnDrawMenu()
@@ -144,10 +141,6 @@ if (Menu_Begin("Drawings")) then
   self.menu_DrawQPos = Menu_Bool("Draw Q Position (Debug)", self.menu_DrawQPos, self.menu)
   Menu_End()
 end
-
-self.menu_SkinEnable = Menu_Bool("Enalble Mod Skin", self.menu_SkinEnable, self.menu)
-self.menu_SkinIndex = Menu_SliderInt("Set Skin", self.menu_SkinIndex, 0, 15, self.menu)
-
   Menu_End()
 
 end
@@ -177,10 +170,6 @@ or IsTyping()
 or IsDodging())
 or not IsRiotOnTop()
 then return end
-
-if self.menu_SkinEnable then
-  ModSkin(self.menu_SkinIndex)
-end
 
   if (self.R:IsReady()
   and GetOrbMode() == 1)
