@@ -175,7 +175,9 @@ or IsTyping()
 or IsDodging())
 or not IsRiotOnTop()
 then return end
+
 Orbwalker:AllowAttack(GetBuffByName(myHero.Addr, "LucianR") == 0)
+
 self.Q.Delay = (0.409 - (0.009 * GetLevel(myHero.Addr))) * 1000
 
   if GetOrbMode() == 0 and self.E.dashPositions ~= nil then
@@ -297,7 +299,7 @@ function NechritoLucian:CastQEx(target)
       local minionPos = Vector(minion)
       local endPos = myPos:Extended(minionPos, 900)
 
-      if GetDistance(endPos, Vector(target)) < self.Q.Width
+      if GetDistance(endPos, Vector(target)) < self.Q.Width * 0.5
       then
           CastSpellTarget(minion.Addr, _Q)
         end
@@ -316,7 +318,7 @@ function NechritoLucian:CastR(target)
   local castPosX, castPosZ, unitPosX, unitPosZ, hitChance, _aoeTargetsHitCount =
   GetPredictionCore(target.Addr, 0, self.R.Delay, self.R.Width / 2, self.R.Range, self.R.Speed, myHero.x, myHero.z, false, false)
 
-  if castPosX > 0 and castPosZ > 0 and hitChance >= 4 then
+  if hitChance >= 4 then
       local castPos = Vector(castPosX, myHero.y, castPosZ)
 
       self.R:Cast(castPos)
@@ -336,7 +338,7 @@ function NechritoLucian:CastE(target)
     local final = playerPos:Extended(mousePos, 500)
     castPos = final
 
-  elseif GetDistance(Vector(target)) > GetTrueAttackRange() + 40 then
+  elseif GetDistance(Vector(target)) > GetTrueAttackRange() + 60 then
           castPos = Vector(target)
   elseif kitePos ~= nil then
       castPos = kitePos
@@ -382,7 +384,7 @@ function NechritoLucian:GetKitePosition(target)
      table.insert(self.E.dashPositions, pos)
 
      local dist = GetDistance(Vector(target), pos)
-     if dist < 720 and dist > 480 then
+     if dist < 690 and dist > 480 then
      return pos end
    end
     return nil
