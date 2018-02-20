@@ -498,7 +498,10 @@ function NechritoRiven:Reset()
 end
 
 function NechritoRiven:CastQ(target)
-  local delay = 0.25 + math.min(60/1000, GetLatency()/1000)
+  local delay = math.min(60/1000, GetLatency()/1000)
+  local coreDelay =  0.2 - (0.01 * GetLevel(myHero.Addr))
+  delay = delay + coreDelay
+  __PrintTextGame(delay * 1000)
 
   if self:GetTiamat() > -1 and CanCast(self:GetTiamat()) and self.Q.Count == 3 then
       self:CastTiamat()
@@ -509,13 +512,7 @@ function NechritoRiven:CastQ(target)
 
   Orbwalker:AllowMovement(false)
   Orbwalker:AllowAttack(false)
-
-  if self.Q.Count ~= 3 then
-    DelayAction(function() self:Reset() end, delay)
-  else
-    DelayAction(function() self:Reset() end, delay + 0.06)
-
-  end
+  DelayAction(function() self:Reset() end, delay)
 end
 
 function NechritoRiven:EnemyMinionsTbl(range)
