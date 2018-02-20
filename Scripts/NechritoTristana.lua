@@ -191,7 +191,8 @@ function NechritoTristana:OnTick()
     or not IsRiotOnTop()
     then return end
 
-    for k,v in pairs(self:GetEnemies(GetTrueAttackRange())) do
+    local v = GetTarget(GetTrueAttackRange() + 100)
+    if not v then return end
 
       if GetOrbMode() == 1 and self.menu_Rkill then
 
@@ -221,7 +222,7 @@ function NechritoTristana:OnTick()
               CastSpellTarget(v.Addr, _E)
           end
         end
-      end
+
 end
 
 function NechritoTristana:OnAfterAttack(unit, target)
