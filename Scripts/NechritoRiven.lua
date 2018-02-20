@@ -501,7 +501,6 @@ function NechritoRiven:CastQ(target)
   local delay = math.min(60/1000, GetLatency()/1000)
   local coreDelay =  0.2 - (0.01 * GetLevel(myHero.Addr))
   delay = delay + coreDelay
-  __PrintTextGame(delay * 1000)
 
   if self:GetTiamat() > -1 and CanCast(self:GetTiamat()) and self.Q.Count == 3 then
       self:CastTiamat()
