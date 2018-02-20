@@ -1,13 +1,12 @@
 --IncludeFile("Lib\\AntiGapcloser.lua")
-IncludeFile("Lib\\SDK.lua")
 
+if GetChampName(GetMyChamp()) ~= "Riven"
+then return end
+
+IncludeFile("Lib\\SDK.lua")
 class "NechritoRiven"
 
 function OnLoad()
-
-  if GetChampName(GetMyChamp()) ~= "Riven"
-  then return end
-
 NechritoRiven:__init()
 end
 
@@ -17,6 +16,7 @@ function NechritoRiven:__init()
   SetLuaHarass(true)
   SetLuaLaneClear(true)
   --AntiGap = AntiGapcloser(nil)
+
 
 self.Q = Spell({Slot = 0,
                 Range = 260,
@@ -75,6 +75,9 @@ self.R = Spell({Slot = 3,
 
               self.FlashRange = 425 + 70 + self.W.Range
               self.EngangeRange = self.E.Range
+              self.Q.LastCastTick = 0
+              self.W.LastCastTick = 0
+              self.E.LastCastTick = 0
 
   AddEvent(Enum.Event.OnTick, function(...) self:OnTick(...) end)
   AddEvent(Enum.Event.OnUpdateBuff, function(...) self:OnUpdateBuff(...) end)
@@ -134,12 +137,11 @@ end
 function NechritoRiven:OnDraw()
 
   local pos = Vector(myHero)
-    if self.menu_DrawEngageRange and self.E:IsReady() then
-      DrawCircleGame(pos.x, pos.y, pos.z, self.EngangeRange, Lua_ARGB(255, 0, 204, 255))
-    end
+  if GetKeyPress(self.menu_BurstKey) > 0 then
+    DrawCircleGame(pos.x, pos.y, pos.z, self.FlashRange, Lua_ARGB(255, 240,230,140))
 
-    if GetKeyPress(self.menu_BurstKey) > 0 then
-      DrawCircleGame(pos.x, pos.y, pos.z, self.FlashRange, Lua_ARGB(255, 240,230,140))
+  elseif self.menu_DrawEngageRange and self.E:IsReady() then
+      DrawCircleGame(pos.x, pos.y, pos.z, self.EngangeRange, Lua_ARGB(255, 0, 204, 255))
     end
 end
 
@@ -153,13 +155,18 @@ if IsDead(myHero.Addr)
   then return end
 
   if self.R:IsReady() and self.menu_ComboR then
-    self.EngangeRange = self.E.Range + GetAttackRange(GetMyHero()) + 200
+    self.EngangeRange = self.E.Range + GetAttackRange(GetMyHero()) + 230
   else
-    self.EngangeRange = self.E.Range + GetAttackRange(GetMyHero()) + 70
+    self.EngangeRange = self.E.Range + GetAttackRange(GetMyHero()) + 150
   end
 
+    if #self:GetEnemies(650) > 0 then
+      SetEvade(false)
+    else
+      SetEvade(true)
+    end
+
   if GetKeyPress(self.menu_BurstKey) > 0 then
-    SetEvade(false)
     if Orbwalker:CanMove() then
       Orbwalker:Move(Vector(GetMousePosX(), GetMousePosY(), GetMousePosZ()))
     end
@@ -219,11 +226,11 @@ end
     for k, v in pairs(self:GetEnemies(self.EngangeRange)) do
     if self.E:IsReady() then
         self:CastE(v)
-    end
 
-    if self.R:IsReady() and not self.R.WindslashReady then
-      self:CastR(v)
-   end
+        if self.R:IsReady() and not self.R.WindslashReady then
+          self:CastR(v)
+       end
+    end
  end
 end
 
@@ -307,10 +314,14 @@ function NechritoRiven:Burst()
     range = range + 425
   end
 
-  local target = GetTarget(range)
+  local selected = GetTargetSelected()
+  local target = GetUnit(selected)
+  if target == 0 then
+    target = GetTarget(range)
+   end
 
-  if target then
 
+  if target and GetDistance(Vector(myHero), Vector(target)) <= range then
 
     if Orbwalker:CanAttack() then
       Orbwalker:Attack(target)
@@ -321,8 +332,7 @@ function NechritoRiven:Burst()
     end
 
     if self.R:IsReady() and not self.R.WindslashReady then
-      self.R:Cast(myHero)
-      Orbwalker:ResetAutoAttackTimer()
+      self:CastR(target)
     end
 
     if self:GetFlashIndex() > -1
@@ -336,7 +346,7 @@ end
 function NechritoRiven:FlashW(target)
   local targetPos = Vector(target)
   local myPos = Vector(myHero)
-  local flashPos = targetPos + (targetPos - myPos):Normalized() * -100
+  local flashPos = targetPos + (targetPos - myPos):Normalized() * -180
 
   if self.R.AttackRangeBoost or self.R:IsReady() then
     self.W:Cast(myHero)
@@ -356,29 +366,38 @@ end
 
 function NechritoRiven:OnAfterAttack(unit, target)
 
-  if target.IsDead or not target.IsValid then return end
+  if target.IsDead
+  or GetTickCount() - self.Q.LastCastTick <= 400
+  or not target.IsValid then return end
 
-  if GetKeyPress(self.menu_BurstKey) > 0 then
+  if GetKeyPress(self.menu_BurstKey) > 0  then
 
     if self.R:IsReady() then
-      if self.R.WindslashReady then
-        self:CastR(target)
-    else
       self:CastR(target)
-    end
 
+      if self.R.WindslashReady then
+          DelayAction(function() self:CastQ(target) end, 0.25)
+        end
     elseif self.Q:IsReady() then
       self:CastQ(target)
     end
+
   end
 
   if GetOrbMode() == 1 then
 
-    if self.R:IsReady()
-    and self.Q.Count == 3
-    and GetHealthPoint(target) / GetHealthPointMax(target) * 100 <= 50 then
-      self:CastR(target)
-      DelayAction(function() self.Q:Cast(Vector(target)) end, 0.3)
+    if self.R:IsReady() then
+
+      if not self.R.WindslashReady and self.menu_ComboR then
+        self.R:Cast(myHero)
+        DelayAction(function() self.W:Cast(myHero) end, 0.275)
+      end
+
+      if self.Q.Count == 3
+      and GetHealthPoint(target) / GetHealthPointMax(target) * 100 <= 50 then
+        self:CastR(target)
+        DelayAction(function() self.Q:Cast(Vector(target)) end, 0.3)
+      end
     end
 
     if self.W:IsReady() and GetTickCount() - self.E.LastCastTick < 600 then
@@ -387,8 +406,9 @@ function NechritoRiven:OnAfterAttack(unit, target)
 
     if self.Q:IsReady() then
         self:CastQ(target)
-      elseif self.W:IsReady() then
-        self:CastW(target)
+        if self.W:IsReady() then
+          DelayAction(function() self.W:Cast(myHero) end, 0.5)
+        end
     end
 
   elseif GetOrbMode() == 3 then
@@ -439,6 +459,10 @@ function NechritoRiven:OnProcessSpell(unit, spell)
           self.Q.Count = 1
       end
 
+
+    elseif spell.Name == "RivenMartyr" then
+        self.W.LastCastTick = GetTickCount()
+
     elseif spell.Name == "RivenIzunaBlade" and self.Q:IsReady() then
       for k, v in pairs(self:GetEnemies(GetAttackRange(myHero) + 200)) do
         DelayAction(function() self.Q:Cast(v) end, 0.15)
@@ -462,19 +486,31 @@ function NechritoRiven:OnProcessSpell(unit, spell)
 end
 
 function NechritoRiven:Reset()
+  Orbwalker:Move(Vector(GetMousePosX(), GetMousePosY(), GetMousePosZ()))
+  Orbwalker:AllowMovement(true)
+  Orbwalker:AllowAttack(true)
+  Orbwalker:ResetAutoAttackTimer()
 end
 
 function NechritoRiven:CastQ(target)
-  local ping = (GetLatency() / 1000)
+  local delay = 0.25 + math.min(60/1000, GetLatency()/1000)
 
   if self:GetTiamat() > -1 and CanCast(self:GetTiamat()) and self.Q.Count == 3 then
-    self:CastTiamat()
-    DelayAction(function() CastSpellTarget(target.Addr, _Q) end, ping + 0.17)
+      self:CastTiamat()
+      DelayAction(function() CastSpellTarget(target.Addr, _Q) end,  GetLatency()/1000)
   else
-  CastSpellTarget(target.Addr, _Q)
+      CastSpellTarget(target.Addr, _Q)
   end
 
+  Orbwalker:AllowMovement(false)
+  Orbwalker:AllowAttack(false)
 
+  if self.Q.Count ~= 3 then
+    DelayAction(function() self:Reset() end, delay)
+  else
+    DelayAction(function() self:Reset() end, delay + 0.06)
+
+  end
 end
 
 function NechritoRiven:EnemyMinionsTbl(range)
@@ -499,7 +535,7 @@ end
 
 function NechritoRiven:CastR(target)
 
-  if not self.menu_ComboR then return end
+  if not self.menu_ComboR and GetOrbMode() == 1 then return end
 
   if self.R.WindslashReady then
   local castPosX, castPosZ, unitPosX, unitPosZ, hitChance, _aoeTargetsHitCount =
@@ -512,6 +548,7 @@ function NechritoRiven:CastR(target)
         DelayAction(function() self.R:Cast(castPos) end, 0.25)
       end
       self.R:Cast(castPos)
+      Orbwalker:ResetAutoAttackTimer()
     end
   else
     self.R:Cast(myHero)
