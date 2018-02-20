@@ -1,12 +1,14 @@
+
 --IncludeFile("Lib\\AntiGapcloser.lua")
-
-if GetChampName(GetMyChamp()) ~= "Riven"
-then return end
-
 IncludeFile("Lib\\SDK.lua")
+
 class "NechritoRiven"
 
 function OnLoad()
+
+  if GetChampName(GetMyChamp()) ~= "Riven"
+  then return end
+
 NechritoRiven:__init()
 end
 
@@ -160,12 +162,15 @@ if IsDead(myHero.Addr)
     self.EngangeRange = self.E.Range + GetAttackRange(GetMyHero()) + 150
   end
 
-    if #self:GetEnemies(650) > 0 then
+--[[ BUG: THIS DOESNT WORK. (CORE ISSUE)
+    if #self:GetEnemies(900) > 0 then
+      __PrintTextGame("EVADE DISABLED")
       SetEvade(false)
     else
+      __PrintTextGame("EVADE ENABLED")
       SetEvade(true)
     end
-
+]]
   if GetKeyPress(self.menu_BurstKey) > 0 then
     if Orbwalker:CanMove() then
       Orbwalker:Move(Vector(GetMousePosX(), GetMousePosY(), GetMousePosZ()))
