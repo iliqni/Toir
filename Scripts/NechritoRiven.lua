@@ -475,7 +475,7 @@ function NechritoRiven:OnProcessSpell(unit, spell)
     end
   elseif self.E:IsReady()
   and unit.IsEnemy
-   and IsChampion(unit.Addr) then
+   and IsChampion(unit.Addr) and GetDistance(Vector(unit), Vector(myHero)) <= 1000 then
 
     if table.contains(self.targettedSpells, spell.Name) or table.contains(self.avoidableSpells, spell.Name) then
       __PrintTextGame("Avoiding Spell: " .. spell.Name)
